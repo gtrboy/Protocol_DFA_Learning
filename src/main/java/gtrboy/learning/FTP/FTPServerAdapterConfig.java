@@ -56,7 +56,6 @@ public class FTPServerAdapterConfig  {
 
      */
 
-
     public String getInternetAddress() {
         String addr_str =  internetAddress.toString();
         return addr_str.substring(addr_str.lastIndexOf("/") + 1 );
