@@ -53,7 +53,6 @@ public class FTPServerAdapterConfig  {
         //this.port_str = port_str;
         this.dataport = dataport;
     }
-
      */
 
     public String getInternetAddress() {
