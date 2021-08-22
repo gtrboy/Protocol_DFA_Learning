@@ -1,2 +1,5 @@
-# FTP_DFA_Learning
-Learning FTP DFA using LearnLib's L* algorithm.
+# Protocol_DFA_Learning
+Learning protocol DFA using LearnLib's L* algorithm.
+
+## Support Protocols
+* FTP
