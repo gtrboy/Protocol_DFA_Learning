@@ -1,0 +1,15 @@
+{
+  "internetAddress": "127.0.0.1",
+  "localAddress": "127.0.0.1",
+  "port": 21,
+  "timeout": 10,
+  "dataport": 33890,
+  "upfile": "/home/upfile.f",
+  "downfile": "downfile.f",
+  "delfile": "delete.f",
+  "username": "ftpuser",
+  "password": "1234",
+  "chdir": ".",
+  "ftphomedir": "/home/ftpuser"
+  //"ftpchilddir": "./"
+}
