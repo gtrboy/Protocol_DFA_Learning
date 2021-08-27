@@ -280,17 +280,19 @@ public class FTPClient extends FTP {
 
     public void arrangeServerDir() throws IOException {
         String homedir = config.getFtphomedir() + "/";
-        File upfile = new File(homedir + config.getDownfile());
+        File downfile = new File(homedir + config.getDownfile());
         File delfile = new File(homedir + config.getDelfile());
-        upfile.createNewFile();
+        // Before every learning round, create the file to be downloaded and the file to be deleted
+        downfile.createNewFile();  // redundant, could be cut
         delfile.createNewFile();
 
         String childdir = homedir + config.getChDir() + "/";
         //System.out.println(childdir+config.getDownfile());
         //System.out.println(childdir+config.getDelfile());
-        File childupfile = new File(childdir + config.getDownfile());
+        File childdownfile = new File(childdir + config.getDownfile());
         File childdelfile = new File(childdir + config.getDelfile());
-        childupfile.createNewFile();
+        // Before every learning round, create the downloaded file and deleted file in the child dir
+        childdownfile.createNewFile();
         childdelfile.createNewFile();
     }
 }

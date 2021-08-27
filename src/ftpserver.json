@@ -9,7 +9,6 @@
   "delfile": "delete.f",
   "username": "ftpuser",
   "password": "1234",
-  "chdir": ".",
+  "chdir": "ftp",
   "ftphomedir": "/home/ftpuser"
-  //"ftpchilddir": "./"
 }

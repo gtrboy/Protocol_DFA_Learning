@@ -1,34 +1,22 @@
 package gtrboy.learning.FTP;
 
-import gtrboy.learning.learn.LearningConfig;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 
 public class FTPServerAdapterConfig  {
-    private InetAddress internetAddress;
-    private InetAddress localAddress;
-    private int port = 21;
-    private int timeout = 25;
-    private String upfile;
-    private String downfile;
-    private String delfile;
-    private String username;
-    private String password;
-    private String chdir;
-    private int dataport;
-    private String ftphomedir;
-    private String ftpchilddir;
+    private InetAddress internetAddress;  // ip address of the ftp server
+    private InetAddress localAddress;   // local address for active mode (PORT)
+    private int port = 21;  // ftp control data port
+    private int timeout = 10;  //timeout
+    private String upfile;  // upload file name
+    private String downfile;  // download file name
+    private String delfile;  // delete file name
+    private String username;  // ftp username
+    private String password;  //ftp password
+    private String chdir;  // change dir name
+    private int dataport;  // data transform port for active mode (PORT)
+    private String ftphomedir;  // ftp home dir, used to reset dir layout
+    //private String ftpchilddir;
 
     public FTPServerAdapterConfig()  {
         //String f_content = readJSONFile("FTPServer.conf");
