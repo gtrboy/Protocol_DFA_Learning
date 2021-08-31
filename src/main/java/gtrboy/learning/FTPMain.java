@@ -19,10 +19,13 @@ public class FTPMain {
     private static String experimentName = "FTPModel";
     private static List<String> in_alphabets = Arrays.asList(
             "USER", "PASS", "PWD", "PORT", "RETR", "LIST", "CWD", "DELE", "QUIT");
+    /*
     private static List<String> out_alphabets = Arrays.asList(
             "503_inval_seq", "500_syn_err",
             "200_cmd_ok","331_need_psw", "230_login_succ",
             "227_ent_pasv","150_open","226_trans_over","503_need_user","221_exit","421_timeout","QUIT");
+
+     */
 
     public static void main(String[] args) throws NoSuchMethodException, IOException, InterruptedException {
         //FTPServerAdapterConfig ftpServerConfig = new FTPServerAdapterConfig(args[1]);
