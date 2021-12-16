@@ -45,7 +45,7 @@ public class IKEv2Client {
 
 
     private static final String TIMEOUT = "TIMEOUT";
-    private static final String RESET_CMD = "clear crypto ikev2 sa fast";
+    private static final String CISCO_RESET_CMD = "clear crypto ikev2 sa fast";
     private static final int NONCE_LEN = 20;
     private static final int IPSEC_SPI_LEN = 4;
     private static final int IKE_SPI_LEN = 8;
@@ -156,7 +156,8 @@ public class IKEv2Client {
         i_nonce = null;
         r_nonce = null;
 
-        telRemoveSession();
+        // 通过telnet清除目标设备的ike sa
+        ciscoTelRemoveSa();
         while(true){
             try{
                 receive();
@@ -190,10 +191,10 @@ public class IKEv2Client {
         rspi = DataUtils.genEmptyBytes(IKE_SPI_LEN);
     }
 
-    public void telRemoveSession(){
+    public void ciscoTelRemoveSa(){
         TelnetMain tel = new TelnetMain(peeraddr, telnetPassword);
         tel.connect();
-        tel.sendCommand(RESET_CMD);
+        tel.sendCommand(CISCO_RESET_CMD);
         tel.disconnect();
     }
 

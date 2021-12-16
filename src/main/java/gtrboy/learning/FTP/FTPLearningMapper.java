@@ -27,6 +27,7 @@ public class FTPLearningMapper implements SULMapper<String, String, ConcreteMeth
     private Method mQUIT;
 
     public FTPLearningMapper(FTPServerAdapterConfig config) throws UnknownHostException, NoSuchMethodException {
+        // client引用创建后一直保持，不再新建，因此要在reset函数中将对象重置为初始状态
         this.client = new FTPClient(config);
         getMethods();
     }
