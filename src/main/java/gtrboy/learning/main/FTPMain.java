@@ -1,4 +1,4 @@
-package gtrboy.learning;
+package gtrboy.learning.main;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;

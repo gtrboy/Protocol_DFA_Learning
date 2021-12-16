@@ -3,111 +3,140 @@ package gtrboy.learning.IKEv2.messages;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
 import org.dom4j.*;
-import org.dom4j.io.SAXReader;
 import java.io.*;
 import java.util.Iterator;
 import java.util.List;
 
-public class PktIKE {
-    public ByteArrayOutputStream bout;
-    private int totallen = 0;
-    private byte[] initspi;
-    private byte[] respspi;
-    private byte[] msgid;
-    private byte nextpld;
-    private byte exchtype;
-    Document document;
+abstract class PktIKE {
+    protected ByteArrayOutputStream bout;
+    protected byte[] packetBytes;
+    protected int totallen = 0;
+    protected byte[] initspi;
+    protected byte[] respspi;
+    protected byte[] msgid;
+
+    protected static final int IKE_HDR_LEN = 28;
+    //Document document;
 
     //public byte[] packetbytes;
 
-    public PktIKE(byte[] initspi, byte[] respspi, int msgid, byte nextpld, byte exchtype){
+    public PktIKE(byte[] initspi, byte[] respspi, int msgid){
         this.initspi = initspi;
         this.respspi = respspi;
-        this.msgid = DataUtils.intToBytes(msgid);
-        this.nextpld = nextpld;
-        this.exchtype = exchtype;
+        this.msgid = DataUtils.intToBytesB(msgid);
         this.bout = new ByteArrayOutputStream();
-
-
-
     }
 
-    public void getTotalLen(Element node){
-        if(node.attributeCount()!=0) {
-            Attribute attr = node.attribute("size");
-            int nodelen = Integer.parseInt(attr.getText());
-            totallen = totallen + nodelen;
+    abstract protected Element getXMLRoot(InputStream xmlStream) throws DocumentException;
+
+    abstract protected byte[] fromXMLToBytes(Element root);
+
+    public byte[] getPacketBytes(){
+        return packetBytes;
+    }
+
+    protected void doConstruct(String patternFile){
+        InputStream xmlStream = this.getClass().getClassLoader().getResourceAsStream("IKEv2/IKEv2Messages/" + patternFile);
+        try{
+            Element root = getXMLRoot(xmlStream);
+            packetBytes = fromXMLToBytes(root);
+        } catch (DocumentException e){
+            LogUtils.logException(e, this.getClass().getName(), "Document Error!");
+            //e.printStackTrace();
         }
-        List<Element> listElement = node.elements();
+    }
+
+    protected int getTreeLen(Element root, int t_len){
+        int cur_len = t_len;
+        if(root.attributeCount()!=0) {
+            Attribute attr = root.attribute("size");
+            int nodeLen = Integer.parseInt(attr.getText());
+            return nodeLen + cur_len;
+        }
+        List<Element> listElement = root.elements();
         for(Element e:listElement){
-            this.getTotalLen(e);
+            cur_len = this.getTreeLen(e, cur_len);
         }
+        return cur_len;
     }
 
-    public Document getXMLDocument(String xmlpath) throws DocumentException {
-        File xmlfile = new File(xmlpath);
-        SAXReader saxReader = new SAXReader();
-        Document doc = saxReader.read(xmlfile);
-        return doc;
+
+    protected void initTotalLen(Element root, int preLen){
+        totallen = getTreeLen(root, preLen);
     }
 
-    public void ParseFinalField(Element ele){
+    protected byte[] ParseFinalField(Element ele){
+        ByteArrayOutputStream bAos = new ByteArrayOutputStream();
         for(Iterator it = ele.elementIterator(); it.hasNext();){
             Element element = (Element) it.next();
             String text = element.getText();
-            bout.writeBytes(DataUtils.hexStrToBytes(text));
+            bAos.writeBytes(DataUtils.hexStrToBytes(text));
         }
+        return bAos.toByteArray();
     }
 
-    public void ParseIKEHeader(Element ih_root) {
-        for(Iterator it = ih_root.elementIterator(); it.hasNext();){
-            Element element = (Element) it.next();
-            String ele_name = element.getName();
-            switch (ele_name){
-                case "initspi":
-                    if (initspi.length==8){
-                        bout.writeBytes(initspi);
-                    }else{
-                        LogUtils.logErrExit(this.getClass().getName(), "Init SPI length error! ");
-                    }
-                    break;
-                case "msgid":
-                    if(msgid.length==4){
-                        bout.writeBytes(msgid);
-                    }else{
-                        LogUtils.logErrExit(this.getClass().getName(), "Message ID length error! ");
-                    }
-                    break;
-                case "length":
-                    if(totallen!=0){
-                        bout.writeBytes(DataUtils.intToBytes(totallen));
-                    }
-                    else{
-                        LogUtils.logErrExit(this.getClass().getName(), "total len is zero! ");
-                    }
-                    break;
-                case "respspi":
-                    if (respspi.length==8){
-                        bout.writeBytes(respspi);
-                    }else{
-                        LogUtils.logErrExit(this.getClass().getName(), "Resp SPI length error! ");
-                    }
-                    break;
-                case "nextpld":
-                    bout.write(nextpld);
-                    break;
-                case "exch_type":
-                    bout.write(exchtype);
-                    break;
+    protected byte[] ParseIKEHeader(Element ih_root) {
+        ByteArrayOutputStream bAos = new ByteArrayOutputStream();
+        try {
+            for (Iterator it = ih_root.elementIterator(); it.hasNext(); ) {
+                Element element = (Element) it.next();
+                String ele_name = element.getName();
+                switch (ele_name) {
+                    case "initspi":
+                        if (initspi.length == 8) {
+                            bAos.writeBytes(initspi);
+                        } else {
+                            LogUtils.logErrExit(this.getClass().getName(), "Init SPI length error! ");
+                        }
+                        break;
+                    case "msgid":
+                        if (msgid.length == 4) {
+                            bAos.writeBytes(msgid);
+                        } else {
+                            LogUtils.logErrExit(this.getClass().getName(), "Message ID length error! ");
+                        }
+                        break;
+                    case "length":
+                        if (totallen != 0) {
+                            bAos.writeBytes(DataUtils.intToBytesB(totallen));
+                        } else {
+                            LogUtils.logErrExit(this.getClass().getName(), "total len is zero! ");
+                        }
+                        break;
+                    case "respspi":
+                        if (respspi.length == 8) {
+                            bAos.writeBytes(respspi);
+                        } else {
+                            LogUtils.logErrExit(this.getClass().getName(), "Resp SPI length error! ");
+                        }
+                        break;
+                    default:
+                        bAos.writeBytes(DataUtils.hexStrToBytes(element.getText()));
+                }
+            }
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return bAos.toByteArray();
+    }
 
-                default:
-                    bout.writeBytes(DataUtils.hexStrToBytes(element.getText()));
+
+
+    protected byte[] ParsePayloadHdr(Element pHdr, Element pData){
+        ByteArrayOutputStream bAos = new ByteArrayOutputStream();
+        short pLen = (short) getTreeLen(pData,4);
+        for(Iterator it = pHdr.elementIterator(); it.hasNext();){
+            Element element = (Element) it.next();
+            String text = element.getText();
+            String name = element.getName();
+            if("payld_len".equals(name)){
+                bAos.writeBytes(DataUtils.shortToBytesB(pLen));
+            }else {
+                bAos.writeBytes(DataUtils.hexStrToBytes(text));
             }
         }
+        return bAos.toByteArray();
     }
 
-    public void ParsePayloadHdr(Element ele_phdr){
-        ParseFinalField(ele_phdr);
-    }
 
 }

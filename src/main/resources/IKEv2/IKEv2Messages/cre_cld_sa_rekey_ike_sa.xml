@@ -1,0 +1,112 @@
+<create_child_sa>
+    <ike_header>
+        <initspi size="8">null</initspi>
+        <respspi size="8">null</respspi>
+        <nextpld size="1">2e</nextpld>
+        <version size="1">20</version>
+        <exch_type size="1">24</exch_type>
+        <flags size="1">08</flags>
+        <msgid size="4">null</msgid>
+        <length size="4">null</length>
+    </ike_header>
+    <payload_enc>
+        <p_header>
+            <n_payld size="1">21</n_payld>
+            <flag size="1">00</flag>
+            <payld_len size="2">null</payld_len>
+        </p_header>
+        <data>
+            <!-- Initialization Vector -->
+            <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
+            <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
+            <enc_data>
+                <payload_sa>
+                    <p_header>
+                        <!--Nonce-->
+                        <n_payld size="1">28</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <proposal>
+                            <prop_header>
+                                <n_payld size="1">00</n_payld>
+                                <resv size="1">00</resv>
+                                <paylen size="2">null</paylen>
+                                <prop_num size="1">01</prop_num>
+                                <protoid size="1">01</protoid>
+                                <spisize size="1">08</spisize>
+                                <prop_trans size="1">04</prop_trans>
+                                <spi size="8">null</spi>
+                            </prop_header>
+                            <transform>
+                                <!-- Encryption Algorithm: ENCR_AES_CBC (12), Key Length:256 -->
+                                <last size="1">03</last>
+                                <reserved size="1">00</reserved>
+                                <paylen size="2">000c</paylen>
+                                <transtype size="1">01</transtype>
+                                <reserved size="1">00</reserved>
+                                <transid size="2">000c</transid>
+                                <transattr>
+                                    <attrtype size="2">800e</attrtype>
+                                    <keylen size="2">0100</keylen>
+                                </transattr>
+                            </transform>
+                            <transform>
+                                <!-- PRF: PRF_HMAC_SHA2_512 (7) -->
+                                <last size="1">03</last>
+                                <reserved size="1">00</reserved>
+                                <paylen size="2">0008</paylen>
+                                <transtype size="1">02</transtype>
+                                <reserved size="1">00</reserved>
+                                <transid size="2">0007</transid>
+                            </transform>
+                            <transform>
+                                <!-- Integrity Algorithm: AUTH_HMAC_SHA2_512_256 (14) -->
+                                <last size="1">03</last>
+                                <reserved size="1">00</reserved>
+                                <paylen size="2">0008</paylen>
+                                <transtype size="1">03</transtype>
+                                <reserved size="1">00</reserved>
+                                <transid size="2">000e</transid>
+                            </transform>
+                            <transform>
+                                <!-- DH Group: 2048 bit MODP group (14) -->
+                                <last size="1">00</last>
+                                <reserved size="1">00</reserved>
+                                <paylen size="2">0008</paylen>
+                                <transtype size="1">04</transtype>
+                                <reserved size="1">00</reserved>
+                                <transid size="2">000e</transid>
+                            </transform>
+                        </proposal>
+                    </data>
+                </payload_sa>
+                <payload_nc>
+                    <p_header>
+                        <n_payld size="1">22</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <nc_data size="20">null</nc_data>
+                    </data>
+                </payload_nc>
+                <payload_ke>
+                    <p_header>
+                        <n_payld size="1">00</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <dhgroup size="2">000e</dhgroup>
+                        <reserved size="2">0000</reserved>
+                        <ke_data size="256">null</ke_data>
+                    </data>
+                </payload_ke>
+            </enc_data>
+            <!-- The size of the checksum should be changed if the integrity algorithm been changed. -->
+            <checksum size="32">null</checksum>
+        </data>
+    </payload_enc>
+</create_child_sa>

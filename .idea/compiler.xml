@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="Learning_for_Fuzzing" />
         <module name="FTP_Learning" />
+        <module name="Protocol_DFA_Learning" />
       </profile>
     </annotationProcessing>
   </component>

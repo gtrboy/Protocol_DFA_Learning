@@ -1,0 +1,162 @@
+<ike_auth>
+    <ike_header>
+        <initspi size="8">null</initspi>
+        <respspi size="8">null</respspi>
+        <nextpld size="1">2e</nextpld>
+        <version size="1">20</version>
+        <exch_type size="1">23</exch_type>
+        <flags size="1">08</flags>
+        <msgid size="4">null</msgid>
+        <length size="4">null</length>
+    </ike_header>
+    <payload_enc>
+        <p_header>
+            <!--identification-->
+            <n_payld size="1">23</n_payld>
+            <flag size="1">00</flag>
+            <payld_len size="2">null</payld_len>
+        </p_header>
+        <data>
+            <!-- Initialization Vector -->
+            <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
+            <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
+            <enc_data>
+                <payload_id>
+                    <p_header>
+                        <n_payld size="1">27</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <!-- type 1: IPV4_ADDR -->
+                        <id_type size="1">01</id_type>
+                        <reserved size="3">000000</reserved>
+                        <id_data size="4">null</id_data>
+                    </data>
+                </payload_id>
+                <payload_auth>
+                    <p_header>
+                        <n_payld size="1">21</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <!-- Shared Key -->
+                        <auth_method size="1">02</auth_method>
+                        <reserved size="3">000000</reserved>
+                        <!-- 64 for PRF_HMAC_SHA2_512 -->
+                        <auth_data size="64">null</auth_data>
+                    </data>
+                </payload_auth>
+                <payload_sa>
+                    <p_header>
+                        <n_payld size="1">2c</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <proposal>
+                            <prop_header>
+                                <n_payld size="1">00</n_payld>
+                                <resv size="1">00</resv>
+                                <paylen size="2">null</paylen>
+                                <prop_num size="1">01</prop_num>
+                                <!--ESP-->
+                                <protoid size="1">03</protoid>
+                                <spisize size="1">04</spisize>
+                                <prop_trans size="1">03</prop_trans>
+                                <spi size="4">null</spi>
+                            </prop_header>
+                            <transform>
+                                <last size="1">03</last>
+                                <reserved size="1">00</reserved>
+                                <paylen size="2">0008</paylen>
+                                <transtype size="1">01</transtype>
+                                <reserved size="1">00</reserved>
+                                <!-- ENCR_3DES -->
+                                <transid size="2">0003</transid>
+                            </transform>
+                            <transform>
+                                <last size="1">03</last>
+                                <reserved size="1">00</reserved>
+                                <paylen size="2">0008</paylen>
+                                <transtype size="1">03</transtype>
+                                <reserved size="1">00</reserved>
+                                <!-- AUTH_HMAC_SHA2_256_128 -->
+                                <transid size="2">000c</transid>
+                            </transform>
+                            <transform>
+                                <last size="1">00</last>
+                                <reserved size="1">00</reserved>
+                                <paylen size="2">0008</paylen>
+                                <transtype size="1">05</transtype>
+                                <reserved size="1">00</reserved>
+                                <transid size="2">0000</transid>
+                            </transform>
+                        </proposal>
+                    </data>
+                </payload_sa>
+                <payload_tsi>
+                    <p_header>
+                        <n_payld size="1">2d</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <ts_num size="1">01</ts_num>
+                        <reserved size="3">000000</reserved>
+                        <ts>
+                            <ts_type size="1">07</ts_type>
+                            <!-- all protocols -->
+                            <protoid size="1">00</protoid>
+                            <sel_len size="2">0010</sel_len>
+                            <sta_port size="2">0000</sta_port>
+                            <end_port size="2">ffff</end_port>
+                            <!-- TSi: 10.1.1.0 ~ 10.1.1.255 -->
+                            <sta_addr size="4">0a010100</sta_addr>
+                            <end_addr size="4">0a0101ff</end_addr>
+                        </ts>
+                    </data>
+                </payload_tsi>
+                <payload_tsr>
+                    <p_header>
+                        <!-- Notify -->
+                        <n_payld size="1">29</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <ts_num size="1">01</ts_num>
+                        <reserved size="3">000000</reserved>
+                        <ts>
+                            <ts_type size="1">07</ts_type>
+                            <!-- all protocols -->
+                            <protoid size="1">00</protoid>
+                            <sel_len size="2">0010</sel_len>
+                            <sta_port size="2">0000</sta_port>
+                            <end_port size="2">ffff</end_port>
+                            <!-- TSr: 172.16.0.0 ~ 172.16.0.255 -->
+                            <sta_addr size="4">ac100000</sta_addr>
+                            <end_addr size="4">ac1000ff</end_addr>
+                        </ts>
+                    </data>
+                </payload_tsr>
+                <payload_notify>
+                    <p_header>
+                        <n_payld size="1">00</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <protoid size="1">01</protoid>
+                        <spi_size size="1">00</spi_size>
+                        <!-- INITIAL_CONTACT -->
+                        <not_msg_type size="2">4000</not_msg_type>
+                    </data>
+                </payload_notify>
+            </enc_data>
+            <!-- The size of the checksum should be changed if the integrity algorithm been changed. -->
+            <checksum size="32">null</checksum>
+        </data>
+    </payload_enc>
+</ike_auth>

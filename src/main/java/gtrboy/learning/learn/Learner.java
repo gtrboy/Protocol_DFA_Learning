@@ -23,6 +23,7 @@ import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.serialization.dot.GraphDOT;
 import net.automatalib.words.Word;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -32,6 +33,7 @@ import java.util.Random;
 
 public class Learner {
     private SULMapper<String, String, ConcreteMethodInput, Object> mapper;
+    private static final String MODEL_DIR = "learnedModels/";
 
     public Learner(SULMapper<String, String, ConcreteMethodInput, Object> mapper){
         this.mapper = mapper;
@@ -65,7 +67,7 @@ public class Learner {
         );
 //        EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracle = new ExtendedEqOracle<>(driver, resetProbability, numSteps, null, null);
 
-        Experiment.MealyExperiment<String, String> experiment = new Experiment.MealyExperiment<>(lStarMealy, eqOracle, sul.getAlphabet());
+        Experiment.MealyExperiment<String, String> experiment = new Experiment.MealyExperiment<>(ttt, eqOracle, sul.getAlphabet());
         experiment.setProfile(true);
         experiment.setLogModels(true);
         experiment.run();
@@ -77,12 +79,18 @@ public class Learner {
 
         MealyMachine<?, String, ?, String> result = experiment.getFinalHypothesis();
 
+        // prepare model directory
+        File folder = new File(MODEL_DIR);
+        if (!folder.exists() && !folder.isDirectory()) {
+            folder.mkdirs();
+        }
+
         // model statistics
         System.out.println("States: " + result.size());
         System.out.println("Sigma: " + sul.getAlphabet().size());
 
         System.out.println("Model: ");
-        String filepath = "learnedModels/" + experimentName + ".dot";
+        String filepath = MODEL_DIR + experimentName + ".dot";
         System.out.println(filepath);
         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(new FileOutputStream(filepath));
         GraphDOT.write(result, sul.getAlphabet(), outputStreamWriter); // may throw IOException!
