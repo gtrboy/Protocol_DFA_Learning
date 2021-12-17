@@ -66,25 +66,16 @@ public class TestMain {
     public static void test(IKEv2Client client){
         String ret;
 
-        ret = client.delOldChildSaWithCurIkeSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.delCurIkeSa();
-        System.out.println("ret: " + ret);
-
         ret = client.saInitWithAcceptedSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.delCurChildSaWithOldIkeSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.delCurIkeSa();
         System.out.println("ret: " + ret);
 
         ret = client.authWithPsk();
         System.out.println("ret: " + ret);
 
-        ret = client.saInitWithAcceptedSa();
+        ret = client.rekeyIkeSa();
+        System.out.println("ret: " + ret);
+
+        ret = client.delOldIkeSa();
         System.out.println("ret: " + ret);
 
 

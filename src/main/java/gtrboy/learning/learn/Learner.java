@@ -39,7 +39,7 @@ public class Learner {
         this.mapper = mapper;
     }
 
-    public Experiment.MealyExperiment<String, String> learn(int numSteps, String experimentName, List<String> inputAlphabet) throws IOException, NoSuchMethodException, InterruptedException {
+    public Experiment.MealyExperiment<String, String> learn(int numSteps, String experimentName, List<String> inputAlphabet) throws IOException {
         double resetProbability = 0.09;
 
         DriverSUL sul = new DriverSUL(mapper);
@@ -67,10 +67,14 @@ public class Learner {
         );
 //        EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracle = new ExtendedEqOracle<>(driver, resetProbability, numSteps, null, null);
 
-        Experiment.MealyExperiment<String, String> experiment = new Experiment.MealyExperiment<>(ttt, eqOracle, sul.getAlphabet());
+        Experiment.MealyExperiment<String, String> experiment = new Experiment.MealyExperiment<>(lStarMealy, eqOracle, sul.getAlphabet());
         experiment.setProfile(true);
         experiment.setLogModels(true);
-        experiment.run();
+        try {
+            experiment.run();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
 
         System.out.println(SimpleProfiler.getResults());
         System.out.println(experiment.getRounds().getSummary());

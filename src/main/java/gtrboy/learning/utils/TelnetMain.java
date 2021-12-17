@@ -69,7 +69,6 @@ public class TelnetMain {
         boolean isConnect = true;
 
         try {
-
             telnet.connect(ip, Integer.parseInt(port));
             in = telnet.getInputStream();
             out = new PrintStream(telnet.getOutputStream());
@@ -141,6 +140,7 @@ public class TelnetMain {
     public void disconnect() {
         try {
             telnet.disconnect();
+            telnet = null;
         } catch (Exception e) {
             e.printStackTrace();
         }
