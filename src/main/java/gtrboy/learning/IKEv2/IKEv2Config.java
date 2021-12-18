@@ -20,6 +20,7 @@ public class IKEv2Config {
     private int prf_key_len;
     private int aes_block_size;
     private int debug;
+    private int retry_num;
     private String telnet_password = null;
 
 
@@ -43,8 +44,8 @@ public class IKEv2Config {
         prf_key_len = Integer.parseInt(props.getProperty("prf_key_len"));
         psk = props.getProperty("psk");
         telnet_password = props.getProperty("tel_pass");
-
         debug = Integer.parseInt(props.getProperty("debug"));
+        retry_num = Integer.parseInt(props.getProperty("retry"));
     }
 
     public int getDebug(){
@@ -99,6 +100,10 @@ public class IKEv2Config {
 
     public int getAESBlockSize(){
         return aes_block_size;
+    }
+
+    public int getRetryNum(){
+        return retry_num;
     }
 
 }
