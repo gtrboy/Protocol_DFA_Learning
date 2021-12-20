@@ -3,9 +3,13 @@ package gtrboy.learning.main;
 
 import gtrboy.learning.IKEv2.IKEv2Client;
 import gtrboy.learning.IKEv2.IKEv2Config;
+import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class TestMain {
@@ -21,6 +25,9 @@ public class TestMain {
 
     public static void main(String[] args) throws Exception{
 
+        String dateStart = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
+        long st = DataUtils.fromDateStringToLong(dateStart);
+        System.out.println("Start Time: " + dateStart);
 
         IKEv2Config config = new IKEv2Config("IKEv2/ikev2_config.properties");
         LogUtils.LOG_LEVEL = config.getDebug();
@@ -30,6 +37,13 @@ public class TestMain {
 
         test(client);
 
+        client.reset();
+
+        String dateEnd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
+        long et = DataUtils.fromDateStringToLong(dateEnd);
+        float diffTime = (et - st) / 1000;
+        System.out.println("End Time: " + dateEnd);
+        System.out.println("Use Time: " + diffTime + "s");
 
         //client.telRemoveSession();
 
@@ -63,7 +77,7 @@ public class TestMain {
 
     }
 
-    public static void test(IKEv2Client client){
+    public static void test(IKEv2Client client) throws IOException {
         String ret;
 
         ret = client.saInitWithAcceptedSa();
@@ -72,11 +86,8 @@ public class TestMain {
         ret = client.authWithPsk();
         System.out.println("ret: " + ret);
 
-        ret = client.rekeyIkeSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.delOldIkeSa();
-        System.out.println("ret: " + ret);
+        //ret = client.authWithPsk();
+        //System.out.println("ret: " + ret);
 
 
     }

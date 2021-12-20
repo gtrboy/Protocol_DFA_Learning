@@ -13,17 +13,18 @@ public class IKEv2Main {
 
     // add: read from configuration file
     private static String experimentName = "IKEv2Model";
+
+    /*
     private static List<String> in_alphabets = Arrays.asList(
             "SA_INIT_ACC", "AUTH_PSK", "REKEY_IKE_SA", "DEL_CUR_IKE_SA", "DEL_OLD_IKE_SA", "REKEY_CHILD_SA_CUR_IKE",
             "REKEY_CHILD_SA_OLD_IKE", "DEL_CUR_CHILD_SA_CUR_IKE", "DEL_CUR_CHILD_SA_OLD_IKE", "DEL_OLD_CHILD_SA_CUR_IKE",
             "DEL_OLD_CHILD_SA_OLD_IKE");
-    /*
-    private static List<String> out_alphabets = Arrays.asList(
-            "503_inval_seq", "500_syn_err",
-            "200_cmd_ok","331_need_psw", "230_login_succ",
-            "227_ent_pasv","150_open","226_trans_over","503_need_user","221_exit","421_timeout","QUIT");
-
      */
+
+    private static List<String> in_alphabets = Arrays.asList(
+            "AUTH_PSK", "REKEY_IKE_SA", "DEL_CUR_IKE_SA", "DEL_OLD_IKE_SA", "REKEY_CHILD_SA_CUR_IKE",
+            "REKEY_CHILD_SA_OLD_IKE", "DEL_CUR_CHILD_SA_CUR_IKE", "DEL_CUR_CHILD_SA_OLD_IKE", "DEL_OLD_CHILD_SA_CUR_IKE",
+            "DEL_OLD_CHILD_SA_OLD_IKE");
 
     public static void main(String[] args) throws NoSuchMethodException, IOException, InterruptedException {
         IKEv2Config config = new IKEv2Config("IKEv2/ikev2_config.properties");

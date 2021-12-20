@@ -52,7 +52,7 @@ public class IKEv2LearningMapper implements SULMapper<String, String, ConcreteMe
     }
 
     private void getMethods() throws NoSuchMethodException {
-        m_SA_INIT_ACC = IKEv2Client.class.getMethod("saInitWithAcceptedSa");
+        //m_SA_INIT_ACC = IKEv2Client.class.getMethod("saInitWithAcceptedSa");
         //m_SA_INIT_UNACC = IKEv2Client.class.getMethod("saInitWithUnacceptedSA");
         m_AUTH_PSK = IKEv2Client.class.getMethod("authWithPsk");
         //m_AUTH_CERT = IKEv2Client.class.getMethod("authWithCert");
@@ -112,8 +112,8 @@ public class IKEv2LearningMapper implements SULMapper<String, String, ConcreteMe
     @Override
     public ConcreteMethodInput mapInput(String abstractInput) {
         switch (abstractInput){
-            case "SA_INIT_ACC":
-                return getConcreteMethod("saInitWithAcceptedSa", m_SA_INIT_ACC, Collections.emptyList());
+            //case "SA_INIT_ACC":
+            //    return getConcreteMethod("saInitWithAcceptedSa", m_SA_INIT_ACC, Collections.emptyList());
             case "AUTH_PSK":
                 return getConcreteMethod("authWithPsk", m_AUTH_PSK, Collections.emptyList());
             case "REKEY_IKE_SA":
@@ -163,8 +163,8 @@ public class IKEv2LearningMapper implements SULMapper<String, String, ConcreteMe
         SULMapper.super.post();
         try {
             client.reset();
-            Thread.sleep(500);
-        } catch (IOException | InterruptedException e) {
+            //Thread.sleep(200);
+        } catch (IOException  e) {
             e.printStackTrace();
         }
         LogUtils.logInfo(this.getClass().getName(), "-----------------------------------------\n\n");

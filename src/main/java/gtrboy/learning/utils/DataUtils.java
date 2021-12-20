@@ -1,5 +1,7 @@
 package gtrboy.learning.utils;
 
+import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -113,5 +115,18 @@ public final class DataUtils {
         Arrays.fill(bt, (byte) 0x00);
         return bt;
     }
+
+
+    public static long fromDateStringToLong(String inVal) {
+        Date date = null;
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS");
+        try {
+            date = inputFormat.parse(inVal);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return date.getTime();
+    }
+
 }
 

@@ -26,16 +26,15 @@ public class IKEv2Client {
     private byte[] old_r_nonce = null;
     private int curMsgId = 0;
     private int oldMsgId = 0;
+    private int wantedMsgId = 0;
     private String peeraddr;
     private String localaddr;
     private int port;
-    // second
-    private int timeout;
+    private float timeout;
     private DatagramSocket ds;
     //IKEv2Parser parser;
     private IKEv2KeysGener curKeyGen;
     private IKEv2KeysGener oldKeyGen;
-    private IKEv2KeysGener tmpNewKeyGen;
     private byte[] iInitSaPkt;
     private byte[] iChildSpi;
     private byte[] rChildSpi;
@@ -44,6 +43,7 @@ public class IKEv2Client {
     private String telnetPassword;
     private TelnetMain ciscoTel;
     private int gRetryNum=0;
+    //private byte[] lastPkt;
 
 
     private static final String TIMEOUT = "TIMEOUT";
@@ -120,8 +120,22 @@ public class IKEv2Client {
 
     private DatagramPacket receive() throws IOException {
         byte[] buffer = new byte[1024];
+        int msgId = 0;
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-        ds.receive(packet);
+        while(true) {
+            ds.receive(packet);
+            byte[] bPkt = packet.getData();
+            msgId = DataUtils.bytesToIntB(bPkt, 20);
+            LogUtils.logDebug(this.getClass().getName(), "Msg Id: " + msgId);
+            // discard cmd del information packet
+            if(bPkt[18]==0x25 && bPkt[19]==0x00){
+
+            }else if(msgId!=wantedMsgId) {
+
+            }else {
+                break;
+            }
+        }
         return packet;
     }
 
@@ -141,6 +155,7 @@ public class IKEv2Client {
 
     public void prepare() {
         InitSocket();
+        saInitWithAcceptedSa();
         //InitSPI();
     }
 
@@ -156,6 +171,7 @@ public class IKEv2Client {
         rOldChildSpi = null;
         curMsgId = 0;
         oldMsgId = 0;
+        wantedMsgId = 0;
         curKeyGen = null;
         oldKeyGen = null;
         i_ke = null;
@@ -178,7 +194,7 @@ public class IKEv2Client {
     private void InitSocket() {
         try{
             ds = new DatagramSocket(500);
-            ds.setSoTimeout(timeout*1000);
+            ds.setSoTimeout((int) (timeout*1000));
         } catch (SocketException e){
             LogUtils.logException(e, this.getClass().getName(), "UDP socket init error! ");
         }
@@ -222,9 +238,10 @@ public class IKEv2Client {
         byte[] pktBytes = pkt.getPacketBytes();
 
         int round = gRetryNum;
-        while(round>0){
+        while(round>=0){
             try{
                 send(pktBytes);
+                wantedMsgId = curMsgId;
             } catch (IOException e){
                 LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error!");
             }
@@ -277,9 +294,10 @@ public class IKEv2Client {
                     curKeyGen, r_nonce, iInitSaPkt, localaddr, i_child_spi);
             byte[] pktBytes = pkt.getPacketBytes();
             int round = gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pktBytes);
+                    wantedMsgId = curMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error!");
                 }
@@ -328,9 +346,10 @@ public class IKEv2Client {
             PktRekeyIkeSa pkt = new PktRekeyIkeSa("cre_cld_sa_rekey_ike_sa.xml", ispi, rspi, curMsgId,
                     curKeyGen, new_spi, new_nc, new_ke);
             int round=gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
+                    wantedMsgId = curMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }
@@ -386,9 +405,10 @@ public class IKEv2Client {
         }else {
             PktDelIKESa pkt = new PktDelIKESa("info_del_ike_sa.xml", ispi, rspi, curMsgId, curKeyGen);
             int round=gRetryNum;
-            while (round>0) {
+            while (round>=0) {
                 try {
                     send(pkt.getPacketBytes());
+                    wantedMsgId = curMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }
@@ -431,10 +451,10 @@ public class IKEv2Client {
         }else {
             PktDelIKESa pkt = new PktDelIKESa("info_del_ike_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen);
             int round=gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
-
+                    wantedMsgId = oldMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }
@@ -489,9 +509,10 @@ public class IKEv2Client {
             PktRekeyChildSa pkt = new PktRekeyChildSa("cre_cld_sa_rekey_cld_sa.xml", ispi, rspi, curMsgId,
                     curKeyGen, old_c_spi, new_c_spi, new_nc);
             int round=gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
+                    wantedMsgId = curMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }
@@ -546,9 +567,10 @@ public class IKEv2Client {
             PktRekeyChildSa pkt = new PktRekeyChildSa("cre_cld_sa_rekey_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId,
                     oldKeyGen, old_c_spi, new_c_spi, new_nc);
             int round=gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
+                    wantedMsgId = oldMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }
@@ -601,9 +623,10 @@ public class IKEv2Client {
 
             PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, old_c_spi);
             int round=gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
+                    wantedMsgId = curMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }
@@ -649,9 +672,10 @@ public class IKEv2Client {
 
             PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, old_c_spi);
             int round=gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
+                    wantedMsgId = oldMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }
@@ -696,9 +720,10 @@ public class IKEv2Client {
 
             PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, old_c_spi);
             int round=gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
+                    wantedMsgId = curMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }
@@ -743,9 +768,10 @@ public class IKEv2Client {
 
             PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, old_c_spi);
             int round=gRetryNum;
-            while(round>0) {
+            while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
+                    wantedMsgId = oldMsgId;
                 } catch (IOException e) {
                     LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
                 }

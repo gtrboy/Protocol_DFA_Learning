@@ -16,6 +16,7 @@ import de.learnlib.oracle.equivalence.mealy.RandomWalkEQOracle;
 import de.learnlib.oracle.membership.SULOracle;
 import de.learnlib.util.Experiment;
 import de.learnlib.util.statistics.SimpleProfiler;
+import gtrboy.learning.utils.DataUtils;
 import net.automatalib.visualization.Visualization;
 // import sut.Driver;
 
@@ -27,7 +28,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -67,14 +70,24 @@ public class Learner {
         );
 //        EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracle = new ExtendedEqOracle<>(driver, resetProbability, numSteps, null, null);
 
-        Experiment.MealyExperiment<String, String> experiment = new Experiment.MealyExperiment<>(lStarMealy, eqOracle, sul.getAlphabet());
+        Experiment.MealyExperiment<String, String> experiment = new Experiment.MealyExperiment<>(ttt, eqOracle, sul.getAlphabet());
         experiment.setProfile(true);
         experiment.setLogModels(true);
+
+        // Start Experiment
+        String dateStart = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
+        long st = DataUtils.fromDateStringToLong(dateStart);
+        System.out.println("Start Time: " + dateStart);
         try {
             experiment.run();
         } catch (Exception e){
             e.printStackTrace();
         }
+        String dateEnd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
+        long et = DataUtils.fromDateStringToLong(dateEnd);
+        System.out.println("End Time: " + dateEnd);
+        float diffTime = (et - st) / 1000 / 60;
+        System.out.println("Use Time: " + diffTime + "m");
 
         System.out.println(SimpleProfiler.getResults());
         System.out.println(experiment.getRounds().getSummary());

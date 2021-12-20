@@ -10,7 +10,7 @@ public class IKEv2Config {
     private String peerAddress;  // ip address of the ikev2 server
     private String localAddress;   // local address of the client
     private int port = 500;  // ikev2 server port, UDP
-    private int timeout = 5;  //timeout
+    private float timeout = 5;  //timeout
     private int dhGroup = 14;
     private String prfFunc = null;
     private String intgFunc = null;
@@ -33,7 +33,7 @@ public class IKEv2Config {
         peerAddress = props.getProperty("peer_address");
         localAddress = props.getProperty("local_address");
         port = Integer.parseInt(props.getProperty("port"));
-        timeout = Integer.parseInt(props.getProperty("timeout"));
+        timeout = Float.parseFloat(props.getProperty("timeout"));
 
         dhGroup = Integer.parseInt(props.getProperty("DH_group"));
         prfFunc = props.getProperty("prf");
@@ -68,7 +68,7 @@ public class IKEv2Config {
         return port;
     }
 
-    public int getTimeout() {
+    public float getTimeout() {
         return timeout;
     }
 
