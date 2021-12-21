@@ -3,6 +3,8 @@ package gtrboy.learning.IKEv2.parsers;
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
@@ -10,6 +12,8 @@ public class IKEv2AuthParser extends IKEv2EncParser {
     IKEv2KeysGener keyG = null;
     byte[] rChildSpi = null;
     //byte[] peerIV = null;
+
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
 
     public IKEv2AuthParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
@@ -31,7 +35,8 @@ public class IKEv2AuthParser extends IKEv2EncParser {
                     try {
                         parseEncPayload();
                     } catch (Exception e){
-                        LogUtils.logException(e, this.getClass().getName(), "Failed to decrypt the enc data! ");
+                        LOGGER.error("Failed to decrypt the enc data! ");
+                        e.printStackTrace();
                     }
                     break;
                 case 0x29:    // Notify
@@ -67,13 +72,15 @@ public class IKEv2AuthParser extends IKEv2EncParser {
             retStr = NOTIFY_TYPES.get(Integer.valueOf((int)notifyType));
             //LogUtils.logDebug(this.getClass().getName(), "Notify Type: " + notifyType);
             if(retStr == null){
-                LogUtils.logErrExit(this.getClass().getName(), "Unknown Notify Type! ");
+                LOGGER.error("Unknown Notify Type! ");
+                System.exit(-1);
             }
         } else if (isNormal){   // Normal
             //retStr = "RESP_IKE_AUTH";
             retStr = "OK";
         }else {
-            LogUtils.logErrExit(this.getClass().getName(), "Receive wrong IKE_AUTH! ");
+            LOGGER.error("Receive wrong IKE_AUTH! ");
+            System.exit(-1);
         }
         return retStr;
     }

@@ -28,7 +28,7 @@ public class IKEv2Main {
 
     public static void main(String[] args) throws NoSuchMethodException, IOException, InterruptedException {
         IKEv2Config config = new IKEv2Config("IKEv2/ikev2_config.properties");
-        LogUtils.LOG_LEVEL = config.getDebug();
+        //LogUtils.LOG_LEVEL = config.getDebug();
         //LogUtils.logDebug("MAIN", "Enter Main");
 
         // FTPClientWrapper ftpClient = new FTPClientWrapper(ftpServerConfig);

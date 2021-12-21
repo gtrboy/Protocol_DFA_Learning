@@ -3,12 +3,14 @@ package gtrboy.learning.IKEv2;
 import gtrboy.learning.IKEv2.messages.*;
 import gtrboy.learning.IKEv2.parsers.*;
 import gtrboy.learning.utils.DataUtils;
-import gtrboy.learning.utils.LogUtils;
+//import gtrboy.learning.utils.LogUtils;
 
 import java.io.IOException;
 import java.net.*;
 
 import gtrboy.learning.utils.TelnetMain;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 public class IKEv2Client {
@@ -56,9 +58,10 @@ public class IKEv2Client {
     private static final boolean OLD_SA = false;
     private static final boolean CUR_SA = true;
 
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2Client(IKEv2Config config) {
-        LogUtils.logDebug(this.getClass().getName(), "CREATE IKEv2 CLIENT! ");
+        LOGGER.debug("CREATE IKEv2 CLIENT! ");
         clientConf = config;
         curMsgId = 0;
         peeraddr = config.getPeerAddress();
@@ -114,7 +117,8 @@ public class IKEv2Client {
             ds.send(packet);
             // udpSock.close();
         } catch (Exception e) {
-            LogUtils.logException(e, this.getClass().getName(), "UDP socket send Error! ");
+            LOGGER.error("UDP socket send Error! ");
+            e.printStackTrace();
         }
     }
 
@@ -126,7 +130,7 @@ public class IKEv2Client {
             ds.receive(packet);
             byte[] bPkt = packet.getData();
             msgId = DataUtils.bytesToIntB(bPkt, 20);
-            LogUtils.logDebug(this.getClass().getName(), "Msg Id: " + msgId);
+            LOGGER.debug("Msg Id: " + msgId);
             // discard cmd del information packet
             if(bPkt[18]==0x25 && bPkt[19]==0x00){
 
@@ -196,7 +200,8 @@ public class IKEv2Client {
             ds = new DatagramSocket(500);
             ds.setSoTimeout((int) (timeout*1000));
         } catch (SocketException e){
-            LogUtils.logException(e, this.getClass().getName(), "UDP socket init error! ");
+            LOGGER.error("UDP socket init error! ");
+            e.printStackTrace();
         }
 
     }
@@ -229,8 +234,6 @@ public class IKEv2Client {
     /*************  Packets  **************/
 
     public String saInitWithAcceptedSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "saInitWithAcceptedSA Start.");
         String retStr = null;
         prepareInitSa();
         byte[] respSPI = DataUtils.hexStrToBytes("0000000000000000");
@@ -243,7 +246,8 @@ public class IKEv2Client {
                 send(pktBytes);
                 wantedMsgId = curMsgId;
             } catch (IOException e){
-                LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error!");
+                LOGGER.error("Send UDP packet Error!");
+                e.printStackTrace();
             }
 
             try {
@@ -259,32 +263,28 @@ public class IKEv2Client {
                     r_ke = parser.getPubKey();
                     r_nonce = parser.getNonce();
                     curKeyGen.genKeys(ispi, rspi, i_nonce, r_nonce, r_ke);
-                    LogUtils.logDebug(this.getClass().getName(), "ispi: " + DataUtils.bytesToHexStr(ispi));
-                    LogUtils.logDebug(this.getClass().getName(), "rspi: " + DataUtils.bytesToHexStr(rspi));
-                    LogUtils.logDebug(this.getClass().getName(), "r_ke: " + DataUtils.bytesToHexStr(r_ke));
-                    LogUtils.logDebug(this.getClass().getName(), "r_nonce: " + DataUtils.bytesToHexStr(r_nonce));
+                    LOGGER.debug("ispi: " + DataUtils.bytesToHexStr(ispi));
+                    LOGGER.debug("rspi: " + DataUtils.bytesToHexStr(rspi));
+                    LOGGER.debug("r_ke: " + DataUtils.bytesToHexStr(r_ke));
+                    LOGGER.debug("r_nonce: " + DataUtils.bytesToHexStr(r_nonce));
                 }
                 addMsgId(true);
                 break;
             } catch (SocketTimeoutException e){
                 retStr = TIMEOUT;
                 round--;
-                //LogUtils.logDebug(this.getClass().getName(), "Timeout in IKE_INIT_SA!");
+                //LOGGER.debug("Timeout in IKE_INIT_SA!");
             } catch (IOException e){
-                LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                LOGGER.error("UDP receive packet error! ");
+                e.printStackTrace();
             }
         }
 
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "saInitWithAcceptedSA End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("saInitWithAcceptedSA, RET: " + retStr);
         return retStr;
     }
 
     public String authWithPsk(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "authWithPsk Start.");
-
         String retStr = null;
         if(ispi==null || rspi==null ){
             retStr = ERROR;
@@ -299,7 +299,8 @@ public class IKEv2Client {
                     send(pktBytes);
                     wantedMsgId = curMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error!");
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
                 }
                 try {
                     DatagramPacket rPkt = receive();
@@ -309,7 +310,7 @@ public class IKEv2Client {
                     if ("OK".equals(retStr)) {
                         iChildSpi = i_child_spi;
                         rChildSpi = parser.getRChildSpi();
-                        //LogUtils.logDebug(this.getClass().getName(), "Response child SPI: " + DataUtils.bytesToHexStr(rChildSpi));
+                        //LOGGER.debug("Response child SPI: " + DataUtils.bytesToHexStr(rChildSpi));
                     } else {
                         iChildSpi = null;
                     }
@@ -319,22 +320,19 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
 
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "authWithPsk End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("authWithPsk, RET: " + retStr);
         return retStr;
     }
 
 
     /* IKE SA Operations */
     public String rekeyIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "rekeyIKESA Start.");
         String retStr = null;
         if(ispi==null || rspi==null ){
             retStr = ERROR;
@@ -351,7 +349,8 @@ public class IKEv2Client {
                     send(pkt.getPacketBytes());
                     wantedMsgId = curMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -376,8 +375,8 @@ public class IKEv2Client {
                         oldMsgId = curMsgId + 1;
                         resetMsgId(0, true);
                         //resetMsgId(0);
-                        LogUtils.logInfo(this.getClass().getName(), "new iSPI: " + DataUtils.bytesToHexStr(ispi));
-                        LogUtils.logInfo(this.getClass().getName(), "new rSPI: " + DataUtils.bytesToHexStr(rspi));
+                        LOGGER.debug("new iSPI: " + DataUtils.bytesToHexStr(ispi));
+                        LOGGER.debug("new rSPI: " + DataUtils.bytesToHexStr(rspi));
                     } else {
                         addMsgId(true);
                     }
@@ -386,19 +385,16 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "rekeyIKESA End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("rekeyIKESA, RET: " + retStr);
         return retStr;
     }
 
     public String delCurIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "delCurIKESA Start.");
         String retStr = null;
         if(ispi==null || rspi==null ){
             retStr = ERROR;
@@ -410,7 +406,8 @@ public class IKEv2Client {
                     send(pkt.getPacketBytes());
                     wantedMsgId = curMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -430,21 +427,18 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
             //addMsgId();
             //resetMsgId(0);
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "delCurIKESA End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("delCurIKESA, RET: " + retStr);
         return retStr;
     }
 
     public String delOldIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "delOldIKESA Start.");
         String retStr = null;
         if(iOldSpi==null || rOldSpi==null ){
             retStr = ERROR;
@@ -456,7 +450,8 @@ public class IKEv2Client {
                     send(pkt.getPacketBytes());
                     wantedMsgId = oldMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -477,25 +472,22 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
             //addMsgId();
             //resetMsgId(0);
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "delOldIKESA End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("delOldIKESA, RET: " + retStr);
         return retStr;
     }
 
 
     /* Child SA Operations */
     public String rekeyChildSaWithCurIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "rekeyChildSaWithCurIkeSa Start.");
         String retStr = null;
-        if(ispi==null || rspi==null ){
+        if(ispi==null || rspi==null || iChildSpi==null){
             retStr = ERROR;
         }else {
             byte[] old_c_spi = null;
@@ -514,7 +506,8 @@ public class IKEv2Client {
                     send(pkt.getPacketBytes());
                     wantedMsgId = curMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -538,22 +531,19 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
 
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "rekeyChildSaWithCurIkeSa End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("rekeyChildSaWithCurIkeSa, RET: " + retStr);
         return retStr;
     }
 
     public String rekeyChildSaWithOldIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "rekeyChildSaWithOldIkeSa Start.");
         String retStr = null;
-        if(iOldSpi==null || rOldSpi==null ){
+        if(iOldSpi==null || rOldSpi==null || iChildSpi==null){
             retStr = ERROR;
         }else {
             byte[] old_c_spi = null;
@@ -572,7 +562,8 @@ public class IKEv2Client {
                     send(pkt.getPacketBytes());
                     wantedMsgId = oldMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -596,39 +587,31 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
 
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "rekeyChildSaWithOldIkeSa End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("rekeyChildSaWithOldIkeSa, RET: " + retStr);
         return retStr;
     }
 
     public String delCurChildSaWithCurIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "delCurChildSaWithCurIkeSa Start.");
         String retStr = null;
-        if(ispi==null || rspi==null){
+        if(ispi==null || rspi==null || iChildSpi==null){
             retStr = ERROR;
         }else {
-            byte[] old_c_spi;
-            if (iChildSpi != null) {
-                old_c_spi = iChildSpi;
-            } else {
-                old_c_spi = DataUtils.genRandomBytes(4);
-            }
 
-            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, old_c_spi);
+            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, iChildSpi);
             int round=gRetryNum;
             while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
                     wantedMsgId = curMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -645,39 +628,30 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "delCurChildSaWithCurIkeSa End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("delCurChildSaWithCurIkeSa, RET: " + retStr);
         return retStr;
     }
 
     public String delCurChildSaWithOldIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "delCurChildSaWithOldIkeSa Start.");
         String retStr = null;
-        if(iOldSpi==null||rOldSpi==null){
+        if(iOldSpi==null||rOldSpi==null || iChildSpi==null){
             retStr = ERROR;
         }else {
-            byte[] old_c_spi;
 
-            if (iChildSpi != null) {
-                old_c_spi = iChildSpi;
-            } else {
-                old_c_spi = DataUtils.genRandomBytes(4);
-            }
-
-            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, old_c_spi);
+            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, iChildSpi);
             int round=gRetryNum;
             while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
                     wantedMsgId = oldMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -694,38 +668,30 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "delCurChildSaWithOldIkeSa End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("delCurChildSaWithOldIkeSa, RET: " + retStr);
         return retStr;
     }
 
     public String delOldChildSaWithCurIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "delOldChildSaWithCurIkeSa Start.");
         String retStr = null;
-        if(ispi==null || rspi==null ){
+        if(ispi==null || rspi==null || iOldChildSpi==null){
             retStr = ERROR;
         }else {
-            byte[] old_c_spi;
-            if (iOldChildSpi != null) {
-                old_c_spi = iOldChildSpi;
-            } else {
-                old_c_spi = DataUtils.genRandomBytes(4);
-            }
 
-            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, old_c_spi);
+            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, iOldChildSpi);
             int round=gRetryNum;
             while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
                     wantedMsgId = curMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -742,38 +708,29 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "delOldChildSaWithCurIkeSa End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("delOldChildSaWithCurIkeSa, RET: " + retStr);
         return retStr;
     }
 
     public String delOldChildSaWithOldIkeSa(){
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
-        LogUtils.logInfo(this.getClass().getName(), "delOldChildSaWithOldIkeSa Start.");
         String retStr = null;
-        if(iOldSpi==null||rOldSpi==null){
+        if(iOldSpi==null||rOldSpi==null || iOldChildSpi==null){
             retStr = ERROR;
         }else {
-            byte[] old_c_spi;
-            if (iOldChildSpi != null) {
-                old_c_spi = iOldChildSpi;
-            } else {
-                old_c_spi = DataUtils.genRandomBytes(4);
-            }
-
-            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, old_c_spi);
+            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, iOldChildSpi);
             int round=gRetryNum;
             while(round>=0) {
                 try {
                     send(pkt.getPacketBytes());
                     wantedMsgId = oldMsgId;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error! ");
+                    LOGGER.error("Send UDP packet Error! ");
+                    e.printStackTrace();
                 }
 
                 try {
@@ -790,13 +747,12 @@ public class IKEv2Client {
                     retStr = TIMEOUT;
                     round--;
                 } catch (IOException e) {
-                    LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
                 }
             }
         }
-        LogUtils.logInfo(this.getClass().getName(), "Return Value: " + retStr);
-        LogUtils.logInfo(this.getClass().getName(), "delOldChildSaWithOldIkeSa End.");
-        LogUtils.logInfo(this.getClass().getName(), "***********************************");
+        LOGGER.info("delOldChildSaWithOldIkeSa, RET: " + retStr);
         return retStr;
 
     }
@@ -818,7 +774,8 @@ public class IKEv2Client {
         try{
             send(pktBytes);
         } catch (IOException e){
-            LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error!");
+            LOGGER.error("Send UDP packet Error!");
+            e.printStackTrace();
         }
 
         try {
@@ -828,7 +785,8 @@ public class IKEv2Client {
         } catch (SocketTimeoutException e){
             retstr = TIMEOUT;
         } catch (IOException e){
-            LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+            LOGGER.error("UDP receive packet error! ");
+            e.printStackTrace();
         }
 
         addMsgId(true);
@@ -845,7 +803,8 @@ public class IKEv2Client {
         try{
             send(pktBytes);
         } catch (IOException e){
-            LogUtils.logException(e, this.getClass().getName(), "Send UDP packet Error!");
+            LOGGER.error("Send UDP packet Error!");
+            e.printStackTrace();
         }
 
         try {
@@ -855,7 +814,8 @@ public class IKEv2Client {
         } catch (SocketTimeoutException e){
             retstr = TIMEOUT;
         } catch (IOException e){
-            LogUtils.logException(e, this.getClass().getName(), "UDP receive packet error! ");
+            LOGGER.error("UDP receive packet error! ");
+            e.printStackTrace();
         }
 
         addMsgId(true);

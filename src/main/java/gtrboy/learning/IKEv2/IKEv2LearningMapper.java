@@ -7,6 +7,8 @@ import de.learnlib.mapper.api.SULMapper;
 import gtrboy.learning.FTP.FTPClient;
 import gtrboy.learning.FTP.FTPServerAdapterConfig;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -41,6 +43,7 @@ public class IKEv2LearningMapper implements SULMapper<String, String, ConcreteMe
     private Method m_DEL_OLD_CHILD_SA_CUR_IKE;
     private Method m_DEL_OLD_CHILD_SA_OLD_IKE;
 
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2LearningMapper(IKEv2Config config) {
         try {
@@ -147,7 +150,7 @@ public class IKEv2LearningMapper implements SULMapper<String, String, ConcreteMe
     // 在每次一个word（输入序列）执行之前被调用
     @Override
     public void pre() {
-        LogUtils.logInfo(this.getClass().getName(), "-----------------------------------------");
+        LOGGER.info("-----------------------------------------");
         SULMapper.super.pre();
         try {
             client.prepare();
@@ -167,6 +170,6 @@ public class IKEv2LearningMapper implements SULMapper<String, String, ConcreteMe
         } catch (IOException  e) {
             e.printStackTrace();
         }
-        LogUtils.logInfo(this.getClass().getName(), "-----------------------------------------\n\n");
+        LOGGER.info("-----------------------------------------\n\n");
     }
 }

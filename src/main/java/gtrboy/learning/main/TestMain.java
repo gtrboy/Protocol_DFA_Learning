@@ -5,6 +5,8 @@ import gtrboy.learning.IKEv2.IKEv2Client;
 import gtrboy.learning.IKEv2.IKEv2Config;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,16 +23,19 @@ public class TestMain {
     private static final int DH_GROUP_1024_BIT_MODP_DATA_LEN = 128;
     private static final int DH_GROUP_2048_BIT_MODP_DATA_LEN = 256;
     private static final String MODEL_DIR = "learnedModels/";
+    private static final Logger logger = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
 
     public static void main(String[] args) throws Exception{
 
+
+
         String dateStart = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
         long st = DataUtils.fromDateStringToLong(dateStart);
-        System.out.println("Start Time: " + dateStart);
+        logger.debug("Start Time: " + dateStart);
 
         IKEv2Config config = new IKEv2Config("IKEv2/ikev2_config.properties");
-        LogUtils.LOG_LEVEL = config.getDebug();
+        //LogUtils.LOG_LEVEL = config.getDebug();
         IKEv2Client client = new IKEv2Client(config);
         client.prepare();
 
@@ -41,9 +46,9 @@ public class TestMain {
 
         String dateEnd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
         long et = DataUtils.fromDateStringToLong(dateEnd);
-        float diffTime = (et - st) / 1000;
-        System.out.println("End Time: " + dateEnd);
-        System.out.println("Use Time: " + diffTime + "s");
+        float diffTime = (float) (et - st) / 1000;
+        logger.debug("End Time: " + dateEnd);
+        logger.debug("Use Time: " + diffTime + "s");
 
         //client.telRemoveSession();
 
@@ -81,10 +86,10 @@ public class TestMain {
         String ret;
 
         ret = client.saInitWithAcceptedSa();
-        System.out.println("ret: " + ret);
+        logger.debug("ret: " + ret);
 
         ret = client.authWithPsk();
-        System.out.println("ret: " + ret);
+        logger.debug("ret: " + ret);
 
         //ret = client.authWithPsk();
         //System.out.println("ret: " + ret);

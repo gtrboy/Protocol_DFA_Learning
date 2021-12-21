@@ -3,6 +3,8 @@ package gtrboy.learning.IKEv2.messages;
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dom4j.Element;
 
 import java.io.ByteArrayOutputStream;
@@ -13,6 +15,8 @@ public class PktRekeyChildSa extends PktIKEEnc{
     private byte[] oldCldSpi = null;
     private byte[] newCldSpi = null;
     private byte[] newNc = null;
+
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktRekeyChildSa(String patternFile, byte[] initspi, byte[] respspi, int msgid,
                            IKEv2KeysGener keysGener, byte[] old_c_spi, byte[] new_c_spi, byte[] new_nonce){
@@ -147,7 +151,8 @@ public class PktRekeyChildSa extends PktIKEEnc{
                 try {
                     bAos.writeBytes(DataUtils.hexStrToBytes(curele.getText()));
                 } catch (NumberFormatException e){
-                    LogUtils.logException(e, this.getClass().getName(), "Convert Hex Error! ");
+                    LOGGER.error("Convert Hex Error! ");
+                    e.printStackTrace();
                 }
             }
         }

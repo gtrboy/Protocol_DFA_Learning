@@ -23,6 +23,8 @@ import net.automatalib.visualization.Visualization;
 import net.automatalib.automata.transducers.MealyMachine;
 import net.automatalib.serialization.dot.GraphDOT;
 import net.automatalib.words.Word;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,6 +39,8 @@ import java.util.Random;
 public class Learner {
     private SULMapper<String, String, ConcreteMethodInput, Object> mapper;
     private static final String MODEL_DIR = "learnedModels/";
+    private static final int SEED = 18021996;
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public Learner(SULMapper<String, String, ConcreteMethodInput, Object> mapper){
         this.mapper = mapper;
@@ -66,7 +70,7 @@ public class Learner {
                 resetProbability, // reset SUL w/ this probability before a step
                 numSteps, // max steps (overall)
                 true, // reset step count after counterexample
-                new Random(18021996) // make results reproducible
+                new Random(SEED) // make results reproducible
         );
 //        EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracle = new ExtendedEqOracle<>(driver, resetProbability, numSteps, null, null);
 
@@ -77,7 +81,7 @@ public class Learner {
         // Start Experiment
         String dateStart = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
         long st = DataUtils.fromDateStringToLong(dateStart);
-        System.out.println("Start Time: " + dateStart);
+        LOGGER.info("Start Time: " + dateStart);
         try {
             experiment.run();
         } catch (Exception e){
@@ -85,13 +89,13 @@ public class Learner {
         }
         String dateEnd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
         long et = DataUtils.fromDateStringToLong(dateEnd);
-        System.out.println("End Time: " + dateEnd);
-        float diffTime = (et - st) / 1000 / 60;
-        System.out.println("Use Time: " + diffTime + "m");
+        LOGGER.info("End Time: " + dateEnd);
+        float diffTime = (float) (et - st) / 1000 / 60;
+        LOGGER.info("Use Time: " + diffTime + "m");
 
-        System.out.println(SimpleProfiler.getResults());
-        System.out.println(experiment.getRounds().getSummary());
-        System.out.println(statisticSul.getStatisticalData().getSummary());
+        LOGGER.info(SimpleProfiler.getResults());
+        LOGGER.info(experiment.getRounds().getSummary());
+        LOGGER.info(statisticSul.getStatisticalData().getSummary());
 
 
         MealyMachine<?, String, ?, String> result = experiment.getFinalHypothesis();
@@ -103,17 +107,17 @@ public class Learner {
         }
 
         // model statistics
-        System.out.println("States: " + result.size());
-        System.out.println("Sigma: " + sul.getAlphabet().size());
+        LOGGER.info("States: " + result.size());
+        LOGGER.info("Sigma: " + sul.getAlphabet().size());
 
-        System.out.println("Model: ");
+        LOGGER.info("Model: ");
         String filepath = MODEL_DIR + experimentName + ".dot";
-        System.out.println(filepath);
+        LOGGER.info(filepath);
         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(new FileOutputStream(filepath));
         GraphDOT.write(result, sul.getAlphabet(), outputStreamWriter); // may throw IOException!
         outputStreamWriter.flush();
         outputStreamWriter.close();
-        System.out.println("Model written to " + filepath);
+        LOGGER.info("Model written to " + filepath);
         //LearningUtil.deleteSSTandVizualize(filepath);
         //Visualization.visualize(result, driver.getInputs());
         return experiment;

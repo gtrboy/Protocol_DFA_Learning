@@ -3,11 +3,14 @@ package gtrboy.learning.IKEv2.parsers;
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
 public class IKEv2EncParser extends IKEv2Parser{
     protected IKEv2KeysGener keyG;
+    //private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2EncParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
         super(pkt);
@@ -17,17 +20,17 @@ public class IKEv2EncParser extends IKEv2Parser{
     protected void parseEncPayload() throws Exception {
         byte[] decData;
         int payLen = parsePayloadHdr();
-        //LogUtils.logDebug(this.getClass().getName(), "Enc Payload Length: " + payLen);
+        //LOGGER.debug("Enc Payload Length: " + payLen);
         // Initialization Vector
         byte[] peerIV = parseIV();
-        //LogUtils.logDebug(this.getClass().getName(), "IV: " + DataUtils.bytesToHexStr(peerIV));
+        //LOGGER.debug("IV: " + DataUtils.bytesToHexStr(peerIV));
         int ivLen = peerIV.length;
         int checksumLen = keyG.getChecksumLen();
         int encDataLen = payLen - ivLen - checksumLen - 4;
-        //LogUtils.logDebug(this.getClass().getName(), "encDataLen: " + encDataLen);
+        //LOGGER.debug("encDataLen: " + encDataLen);
 
         decData = parseDecData(encDataLen, peerIV);
-        //LogUtils.logDebug(this.getClass().getName(), "DECDATA: "+DataUtils.bytesToHexStr(decData));
+        //LOGGER.debug("DECDATA: "+DataUtils.bytesToHexStr(decData));
         pb = decData;
         offset = 0;
     }

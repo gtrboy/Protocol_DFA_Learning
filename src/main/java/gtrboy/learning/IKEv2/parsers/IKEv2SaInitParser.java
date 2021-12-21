@@ -1,6 +1,8 @@
 package gtrboy.learning.IKEv2.parsers;
 
-import gtrboy.learning.utils.LogUtils;
+//import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
@@ -8,6 +10,8 @@ public class IKEv2SaInitParser extends IKEv2Parser {
 
     private byte[] key = null;
     private byte[] nonce = null;
+
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2SaInitParser(DatagramPacket pkt){
         super(pkt);
@@ -44,13 +48,15 @@ public class IKEv2SaInitParser extends IKEv2Parser {
        if(notifyType <= NOTIFY_ERROR_MAX && notifyType != 0){
             retstr = NOTIFY_TYPES.get(Integer.valueOf(notifyType));
             if (retstr == null){
-                LogUtils.logErrExit(this.getClass().getName(), "Unknown Notify Type! ");
+                LOGGER.error("Unknown Notify Type! ");
+                System.exit(-1);
             }
         } else if(isSA && isKE && isNC){
            //retstr = "RESP_IKE_INIT_SA";
            retstr = "OK";
        } else{
-            LogUtils.logErrExit(this.getClass().getName(), "Receive wrong IKE_INIT_SA! ");
+            LOGGER.error("Receive wrong IKE_INIT_SA! ");
+           System.exit(-1);
         }
 
         return retstr;
@@ -73,7 +79,8 @@ public class IKEv2SaInitParser extends IKEv2Parser {
         if (key != null) {
             return key;
         }else{
-            LogUtils.logErrExit(this.getClass().getName(), "Get peer's public key error!");
+            LOGGER.error("Get peer's public key error!");
+            System.exit(-1);
         }
         return null;
     }
@@ -88,7 +95,8 @@ public class IKEv2SaInitParser extends IKEv2Parser {
         if (nonce != null) {
             return nonce;
         }else{
-            LogUtils.logErrExit(this.getClass().getName(), "Get peer's nonce error!");
+            LOGGER.error("Get peer's nonce error!");
+            System.exit(-1);
         }
         return null;
     }

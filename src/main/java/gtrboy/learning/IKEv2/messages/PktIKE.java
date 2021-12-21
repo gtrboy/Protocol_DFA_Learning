@@ -2,6 +2,8 @@ package gtrboy.learning.IKEv2.messages;
 
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dom4j.*;
 import java.io.*;
 import java.util.Iterator;
@@ -16,6 +18,7 @@ abstract class PktIKE {
     protected byte[] msgid;
 
     protected static final int IKE_HDR_LEN = 28;
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
     //Document document;
 
     //public byte[] packetbytes;
@@ -41,7 +44,7 @@ abstract class PktIKE {
             Element root = getXMLRoot(xmlStream);
             packetBytes = fromXMLToBytes(root);
         } catch (DocumentException e){
-            LogUtils.logException(e, this.getClass().getName(), "Document Error!");
+            LOGGER.error("Document Error!");
             //e.printStackTrace();
         }
     }
@@ -86,28 +89,32 @@ abstract class PktIKE {
                         if (initspi.length == 8) {
                             bAos.writeBytes(initspi);
                         } else {
-                            LogUtils.logErrExit(this.getClass().getName(), "Init SPI length error! ");
+                            LOGGER.error("Init SPI length error! ");
+                            System.exit(-1);
                         }
                         break;
                     case "msgid":
                         if (msgid.length == 4) {
                             bAos.writeBytes(msgid);
                         } else {
-                            LogUtils.logErrExit(this.getClass().getName(), "Message ID length error! ");
+                            LOGGER.error("Message ID length error! ");
+                            System.exit(-1);
                         }
                         break;
                     case "length":
                         if (totallen != 0) {
                             bAos.writeBytes(DataUtils.intToBytesB(totallen));
                         } else {
-                            LogUtils.logErrExit(this.getClass().getName(), "total len is zero! ");
+                            LOGGER.error("total len is zero! ");
+                            System.exit(-1);
                         }
                         break;
                     case "respspi":
                         if (respspi.length == 8) {
                             bAos.writeBytes(respspi);
                         } else {
-                            LogUtils.logErrExit(this.getClass().getName(), "Resp SPI length error! ");
+                            LOGGER.error("Resp SPI length error! ");
+                            System.exit(-1);
                         }
                         break;
                     default:

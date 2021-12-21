@@ -1,8 +1,10 @@
 package gtrboy.learning.IKEv2.parsers;
 
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
-import gtrboy.learning.utils.DataUtils;
-import gtrboy.learning.utils.LogUtils;
+//import gtrboy.learning.utils.DataUtils;
+//import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
@@ -10,6 +12,7 @@ public class IKEv2RekeyChildSaParser extends IKEv2EncParser{
 
     byte[] r_nonce = null;
     byte[] r_child_spi = null;
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2RekeyChildSaParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
         super(pkt, keysGener);
@@ -29,7 +32,8 @@ public class IKEv2RekeyChildSaParser extends IKEv2EncParser{
                     try{
                         parseEncPayload();
                     } catch (Exception e){
-                        LogUtils.logException(e, this.getClass().getName(), "Failed to decrypt the enc data!");
+                        LOGGER.error("Failed to decrypt the enc data!");
+                        e.printStackTrace();
                     }
                     break;
                 case 0x29:
@@ -37,26 +41,26 @@ public class IKEv2RekeyChildSaParser extends IKEv2EncParser{
                     break;
                 case 0x21:
                     parseSaPayload();
-                    //LogUtils.logDebug(this.getClass().getName(), "Meet SA");
+                    //LOGGER.debug("Meet SA");
                     isSa = true;
                     break;
                 case 0x28:
                     parseNoncePayload();
-                    //LogUtils.logDebug(this.getClass().getName(), "Meet Nonce");
+                    //LOGGER.debug("Meet Nonce");
                     isNc = true;
                     break;
                 case 0x2c:
                     parseDefault();
-                    //LogUtils.logDebug(this.getClass().getName(), "Meet Tsi");
+                    //LOGGER.debug("Meet Tsi");
                     isTsi = true;
                     break;
                 case 0x2d:
                     parseDefault();
-                    //LogUtils.logDebug(this.getClass().getName(), "Meet Tsr");
+                    //LOGGER.debug("Meet Tsr");
                     isTsr = true;
                     break;
                 default:
-                    //LogUtils.logDebug(this.getClass().getName(), "nPLD: "+nPld);
+                    //LOGGER.debug("nPLD: "+nPld);
                     parseDefault();
             }
         }
@@ -64,32 +68,34 @@ public class IKEv2RekeyChildSaParser extends IKEv2EncParser{
         boolean isNormal = isSa && isNc && isTsi && isTsr;
         if(notifyType <= NOTIFY_ERROR_MAX && notifyType != 0){
             retStr = NOTIFY_TYPES.get(Integer.valueOf(notifyType));
-            //LogUtils.logDebug(this.getClass().getName(), "Notify Type: " + notifyType);
+            //LOGGER.debug("Notify Type: " + notifyType);
             if(retStr == null){
-                LogUtils.logErrExit(this.getClass().getName(), "Unknown Notify Type! ");
+                LOGGER.error("Unknown Notify Type! ");
+                System.exit(-1);
             }
         } else if(isNormal){
             //retStr = "RESP_REKEY_CHILD_SA";
             retStr = "OK";
         }else{
-            LogUtils.logErrExit(this.getClass().getName(), "Receive wrong REKEY_CHILD_SA! ");
+            LOGGER.error("Receive wrong REKEY_CHILD_SA! ");
+            System.exit(-1);
         }
         return retStr;
     }
 
     private void parseSaPayload(){
         int pLen = parsePayloadHdr();
-        //LogUtils.logDebug(this.getClass().getName(), "SA nPLD: "+nPld);
+        //LOGGER.debug("SA nPLD: "+nPld);
         r_child_spi = new byte[4];
         AO(8);
         System.arraycopy(pb, AO(4), r_child_spi, 0, 4);
-        //LogUtils.logDebug(this.getClass().getName(), "r_child_spi: " + DataUtils.bytesToHexStr(r_child_spi));
+        //LOGGER.debug("r_child_spi: " + DataUtils.bytesToHexStr(r_child_spi));
         AO(pLen - 16);
     }
 
     private void parseNoncePayload(){
         int nonceLen = parsePayloadHdr() - 4;
-        //LogUtils.logDebug(this.getClass().getName(), "Nonce Len: " + nonceLen);
+        //LOGGER.debug("Nonce Len: " + nonceLen);
         r_nonce = new byte[nonceLen];
         System.arraycopy(pb, AO(nonceLen), r_nonce, 0, nonceLen);
     }

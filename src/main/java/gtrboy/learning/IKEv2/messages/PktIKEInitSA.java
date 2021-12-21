@@ -1,7 +1,9 @@
 package gtrboy.learning.IKEv2.messages;
 
 import gtrboy.learning.utils.DataUtils;
-import gtrboy.learning.utils.LogUtils;
+// import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dom4j.*;
 import org.dom4j.io.SAXReader;
 import java.io.*;
@@ -14,6 +16,8 @@ public class PktIKEInitSA extends PktIKE {
     private byte[] ke;
     private byte[] nc;
 
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
+    
     public PktIKEInitSA(String patternFile, byte[] initspi, byte[] respspi, int msgid, byte[] key_exchg, byte[] nonce)  {
         super(initspi, respspi, msgid);
         ke = key_exchg;
@@ -44,7 +48,8 @@ public class PktIKEInitSA extends PktIKE {
         try {
             bout.flush();
         } catch (IOException e){
-            LogUtils.logException(e, this.getClass().getName(), "Byte stream flush error! ");
+            LOGGER.error("Byte stream flush error! ");
+            e.printStackTrace();
         }
         return bout.toByteArray();
     }
@@ -85,7 +90,8 @@ public class PktIKEInitSA extends PktIKE {
                 try {
                     bAos.writeBytes(DataUtils.hexStrToBytes(element.getText()));
                 } catch (NumberFormatException e){
-                    LogUtils.logException(e, this.getClass().getName(), "Convert Hex Error! ");
+                    LOGGER.error("Convert Hex Error! ");
+                    e.printStackTrace();
                 }
             }
         }
@@ -151,7 +157,8 @@ public class PktIKEInitSA extends PktIKE {
                 try {
                     bAos.writeBytes(DataUtils.hexStrToBytes(curele.getText()));
                 } catch (NumberFormatException e){
-                    LogUtils.logException(e, this.getClass().getName(), "Convert Hex Error! ");
+                    LOGGER.error("Convert Hex Error! ");
+                    e.printStackTrace();
                 }
             }
         }

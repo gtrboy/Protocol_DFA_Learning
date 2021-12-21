@@ -2,12 +2,15 @@ package gtrboy.learning.IKEv2.parsers;
 
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
 public class IKEv2DelParser extends IKEv2EncParser{
 
     //boolean isCurrent;
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2DelParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
         super(pkt, keysGener);
@@ -29,7 +32,7 @@ public class IKEv2DelParser extends IKEv2EncParser{
                             isEmpty = true;
                         }
                     }catch (Exception e){
-                        LogUtils.logException(e, this.getClass().getName(), "Failed to decrypt the enc data! ");
+                        LOGGER.error("Failed to decrypt the enc data! ");
                     }
                     break;
                 case 0x2a:   //Delete Payload
@@ -49,14 +52,16 @@ public class IKEv2DelParser extends IKEv2EncParser{
             retStr = NOTIFY_TYPES.get(Integer.valueOf(notifyType));
             //LogUtils.logDebug(this.getClass().getName(), "Notify Type: " + notifyType);
             if(retStr==null){
-                LogUtils.logErrExit(this.getClass().getName(), "Unknown Notify Type! ");
+                LOGGER.error("Unknown Notify Type! ");
+                System.exit(-1);
             }
         } else if(isDel){
             retStr = "OK";
         }else if(isEmpty){
             retStr = "EmptyInfo";
         }else{
-            LogUtils.logErrExit(this.getClass().getName(), "Receive wrong Del packet! ");
+            LOGGER.error("Receive wrong Del packet! ");
+            System.exit(-1);
         }
         return retStr;
     }

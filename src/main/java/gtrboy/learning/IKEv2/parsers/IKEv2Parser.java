@@ -3,6 +3,8 @@ package gtrboy.learning.IKEv2.parsers;
 import gtrboy.learning.IKEv2.messages.PktIKEInitSA;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.*;
 import java.util.HashMap;
@@ -25,6 +27,8 @@ public class IKEv2Parser {
     protected byte[] notifyData = null;
 
     protected static final int NOTIFY_ERROR_MAX = 16383;
+
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     /*
     public @interface NotifyType {}
@@ -101,7 +105,8 @@ public class IKEv2Parser {
             return respSPI;
         }
         else{
-            LogUtils.logErrExit(this.getClass().getName(), "Response SPI is null! ");
+            LOGGER.error("Response SPI is null! ");
+            System.exit(-1);
         }
         return null;
     }

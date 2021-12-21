@@ -3,6 +3,8 @@ package gtrboy.learning.IKEv2;
 import gtrboy.learning.utils.BigIntegerUtils;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.crypto.*;
 import javax.crypto.interfaces.DHPrivateKey;
@@ -50,6 +52,8 @@ public class IKEv2KeysGener {
     public String intgAlg = null;
     private String psk = null;
 
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
+
 
     public IKEv2KeysGener(int dh_group, String prf, String integrity, String preSecKey, int intKeyLen,
                           int encKeyLen, int prfKeyLen, int aesBlockSize){
@@ -82,7 +86,8 @@ public class IKEv2KeysGener {
                 keySize = DH_GROUP_2048_BIT_MODP_DATA_LEN;
                 break;
             default:
-                LogUtils.logErrExit(this.getClass().getName(), "DH group not supported! ");
+                LOGGER.error("DH group not supported! ");
+                System.exit(-1);
         }
 
         try {
@@ -103,9 +108,11 @@ public class IKEv2KeysGener {
             //priv_key = privateKey.toString().getBytes();
 
         } catch (NoSuchAlgorithmException e) {
-            LogUtils.logException(e, this.getClass().getName(), "No such algorithm! ");
+            LOGGER.error("No such algorithm! ");
+            e.printStackTrace();
         } catch (InvalidAlgorithmParameterException e) {
-            LogUtils.logException(e, this.getClass().getName(), "Failed to initialize key generator! ");
+            LOGGER.error("Failed to initialize key generator! ");
+            e.printStackTrace();
         }
         //return null;
     }
@@ -136,14 +143,14 @@ public class IKEv2KeysGener {
             skPr = new byte[prf_key_len];
             ByteBuffer keyMatBuffer = ByteBuffer.wrap(keyMats);
             keyMatBuffer.get(skD).get(skAi).get(skAr).get(skEi).get(skEr).get(skPi).get(skPr);
-            LogUtils.logDebug(this.getClass().getName(), "skD: " + DataUtils.bytesToHexStr(skD));
-            LogUtils.logDebug(this.getClass().getName(), "skAi: " + DataUtils.bytesToHexStr(skAi));
-            LogUtils.logDebug(this.getClass().getName(), "skAr: " + DataUtils.bytesToHexStr(skAr));
-            LogUtils.logDebug(this.getClass().getName(), "skEi: " + DataUtils.bytesToHexStr(skEi));
-            LogUtils.logDebug(this.getClass().getName(), "skEr: " + DataUtils.bytesToHexStr(skEr));
-            LogUtils.logDebug(this.getClass().getName(), "skPi: " + DataUtils.bytesToHexStr(skPi));
-            LogUtils.logDebug(this.getClass().getName(), "skPr: " + DataUtils.bytesToHexStr(skPr));
-            System.out.printf("\n%s,%s,%s,%s,\"AES-CBC-256 [RFC3602]\",%s,%s,\"HMAC_SHA2_512_256 [RFC4868]\"\n\n",
+            LOGGER.debug("skD: " + DataUtils.bytesToHexStr(skD));
+            LOGGER.debug("skAi: " + DataUtils.bytesToHexStr(skAi));
+            LOGGER.debug("skAr: " + DataUtils.bytesToHexStr(skAr));
+            LOGGER.debug("skEi: " + DataUtils.bytesToHexStr(skEi));
+            LOGGER.debug("skEr: " + DataUtils.bytesToHexStr(skEr));
+            LOGGER.debug("skPi: " + DataUtils.bytesToHexStr(skPi));
+            LOGGER.debug("skPr: " + DataUtils.bytesToHexStr(skPr));
+            LOGGER.info("{},{},{},{},\"AES-CBC-256 [RFC3602]\",{},{},\"HMAC_SHA2_512_256 [RFC4868]\"",
                     DataUtils.bytesToHexStr(ispi),
                     DataUtils.bytesToHexStr(rspi),
                     DataUtils.bytesToHexStr(skEi),
@@ -152,9 +159,11 @@ public class IKEv2KeysGener {
                     DataUtils.bytesToHexStr(skAr));
 
         }catch (InvalidKeyException e){
-            LogUtils.logException(e, this.getClass().getName(), "Failed to generate key materials! ");
+            LOGGER.error("Failed to generate key materials! ");
+            e.printStackTrace();
         }catch (Exception e){
-            LogUtils.logException(e, this.getClass().getName(), "Failed to put keys! ");
+            LOGGER.error("Failed to put keys! ");
+            e.printStackTrace();
         }
     }
 
@@ -178,14 +187,14 @@ public class IKEv2KeysGener {
             skPr = new byte[prf_key_len];
             ByteBuffer keyMatBuffer = ByteBuffer.wrap(keyMats);
             keyMatBuffer.get(skD).get(skAi).get(skAr).get(skEi).get(skEr).get(skPi).get(skPr);
-            LogUtils.logDebug(this.getClass().getName(), "skD: " + DataUtils.bytesToHexStr(skD));
-            LogUtils.logDebug(this.getClass().getName(), "skAi: " + DataUtils.bytesToHexStr(skAi));
-            LogUtils.logDebug(this.getClass().getName(), "skAr: " + DataUtils.bytesToHexStr(skAr));
-            LogUtils.logDebug(this.getClass().getName(), "skEi: " + DataUtils.bytesToHexStr(skEi));
-            LogUtils.logDebug(this.getClass().getName(), "skEr: " + DataUtils.bytesToHexStr(skEr));
-            LogUtils.logDebug(this.getClass().getName(), "skPi: " + DataUtils.bytesToHexStr(skPi));
-            LogUtils.logDebug(this.getClass().getName(), "skPr: " + DataUtils.bytesToHexStr(skPr));
-            System.out.printf("\n%s,%s,%s,%s,\"AES-CBC-256 [RFC3602]\",%s,%s,\"HMAC_SHA2_512_256 [RFC4868]\"\n\n",
+            LOGGER.debug("skD: " + DataUtils.bytesToHexStr(skD));
+            LOGGER.debug("skAi: " + DataUtils.bytesToHexStr(skAi));
+            LOGGER.debug("skAr: " + DataUtils.bytesToHexStr(skAr));
+            LOGGER.debug("skEi: " + DataUtils.bytesToHexStr(skEi));
+            LOGGER.debug("skEr: " + DataUtils.bytesToHexStr(skEr));
+            LOGGER.debug("skPi: " + DataUtils.bytesToHexStr(skPi));
+            LOGGER.debug("skPr: " + DataUtils.bytesToHexStr(skPr));
+            LOGGER.info("{},{},{},{},\"AES-CBC-256 [RFC3602]\",{},{},\"HMAC_SHA2_512_256 [RFC4868]\"",
                     DataUtils.bytesToHexStr(ispi),
                     DataUtils.bytesToHexStr(rspi),
                     DataUtils.bytesToHexStr(skEi),
@@ -193,9 +202,11 @@ public class IKEv2KeysGener {
                     DataUtils.bytesToHexStr(skAi),
                     DataUtils.bytesToHexStr(skAr));
         }catch (InvalidKeyException e){
-            LogUtils.logException(e, this.getClass().getName(), "Failed to generate key materials! ");
+            LOGGER.error("Failed to generate key materials! ");
+            e.printStackTrace();
         }catch (Exception e){
-            LogUtils.logException(e, this.getClass().getName(), "Failed to put keys! ");
+            LOGGER.error("Failed to put keys! ");
+            e.printStackTrace();
         }
     }
 
@@ -208,7 +219,8 @@ public class IKEv2KeysGener {
             prfMac.update(sharedKeyBuffer);
             return prfMac.doFinal();
         } catch (InvalidKeyException | NoSuchAlgorithmException e) {
-            LogUtils.logException(e, this.getClass().getName(), "Failed to generate SKEYSEED! ");
+            LOGGER.error("Failed to generate SKEYSEED! ");
+            e.printStackTrace();
             //throw new IllegalArgumentException("Failed to generate SKEYSEED! ", e);
         }
         return null;
@@ -235,7 +247,8 @@ public class IKEv2KeysGener {
             return dhKeyAgreement.generateSecret();
 
         } catch (Exception e){
-            LogUtils.logException(e, this.getClass().getName(), "Failed to generate shared key! ");
+            LOGGER.error("Failed to generate shared key! ");
+            e.printStackTrace();
         }
         return null;
     }
@@ -272,7 +285,8 @@ public class IKEv2KeysGener {
 
             return keyMatBuffer.array();
         } catch (InvalidKeyException | NoSuchAlgorithmException e) {
-            LogUtils.logException(e, this.getClass().getName(), "Failed to generate keying material");
+            LOGGER.error("Failed to generate keying material");
+            e.printStackTrace();
             //throw new IllegalArgumentException("Failed to generate keying material", e);
         }
         return null;

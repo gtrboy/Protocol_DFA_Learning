@@ -3,6 +3,8 @@ package gtrboy.learning.IKEv2.messages;
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -22,6 +24,8 @@ abstract class PktIKEEnc extends PktIKE{
     public boolean isEnc = false;
     public int padLen = 0;
     public int encDataLen = 0;
+
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktIKEEnc(byte[] initspi, byte[] respspi, int msgid, IKEv2KeysGener Gener){
         super(initspi, respspi, msgid);
@@ -46,28 +50,32 @@ abstract class PktIKEEnc extends PktIKE{
                         if (initspi.length == 8) {
                             bAos.writeBytes(initspi);
                         } else {
-                            LogUtils.logErrExit(this.getClass().getName(), "Init SPI length error! ");
+                            LOGGER.error("Init SPI length error! ");
+                            System.exit(-1);
                         }
                         break;
                     case "msgid":
                         if (msgid.length == 4) {
                             bAos.writeBytes(msgid);
                         } else {
-                            LogUtils.logErrExit(this.getClass().getName(), "Message ID length error! ");
+                            LOGGER.error("Message ID length error! ");
+                            System.exit(-1);
                         }
                         break;
                     case "length":
                         if (totallen != 0) {
                             bAos.writeBytes(DataUtils.intToBytesB(totallen));
                         } else {
-                            LogUtils.logErrExit(this.getClass().getName(), "total len is zero! ");
+                            LOGGER.error("total len is zero! ");
+                            System.exit(-1);
                         }
                         break;
                     case "respspi":
                         if (respspi.length == 8) {
                             bAos.writeBytes(respspi);
                         } else {
-                            LogUtils.logErrExit(this.getClass().getName(), "Resp SPI length error! ");
+                            LOGGER.error("Resp SPI length error! ");
+                            System.exit(-1);
                         }
                         break;
                     case "nextpld":
@@ -114,7 +122,8 @@ abstract class PktIKEEnc extends PktIKE{
         try{
             bout.flush();
         }catch (IOException e){
-            LogUtils.logException(e, this.getClass().getName(),"Byte stream flush error! ");
+            LOGGER.error("Byte stream flush error! ");
+            e.printStackTrace();
         }
         return bout.toByteArray();
     }
@@ -186,7 +195,7 @@ abstract class PktIKEEnc extends PktIKE{
                 e.printStackTrace();
             }
         }else{
-            LogUtils.logErrExit(this.getClass().getName(), "Keys are not prepared! ");
+            LOGGER.error("Keys are not prepared! ");
         }
         return checksum;
     }
@@ -214,13 +223,14 @@ abstract class PktIKEEnc extends PktIKE{
             ByteBuffer clearBuf = ByteBuffer.allocate(totalLen);
             byte[] clearBytes = clearBuf.put(plaintext).put(padding).array();
             byte[] skEi = keysGenerator.getSkEi();
-            LogUtils.logDebug(this.getClass().getName(), "skEi: " + DataUtils.bytesToHexStr(skEi));
+            LOGGER.debug("skEi: " + DataUtils.bytesToHexStr(skEi));
             try {
                 // Encrypt
                 byte[] encBytes = keysGenerator.encrypt(clearBytes, skEi);
                 bAos.writeBytes(encBytes);
             }catch (Exception e){
-                LogUtils.logException(e, this.getClass().getName(), "Encrypt Failed! ");
+                LOGGER.error("Encrypt Failed! ");
+                e.printStackTrace();
             }
 
             // Calculate the integrity checksum

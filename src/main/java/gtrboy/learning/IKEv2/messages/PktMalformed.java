@@ -2,6 +2,8 @@ package gtrboy.learning.IKEv2.messages;
 
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -13,6 +15,8 @@ import java.io.InputStream;
 import java.util.Iterator;
 
 public class PktMalformed extends PktIKE{
+
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktMalformed(String patternFile, byte[] initspi, byte[] respspi, int msgid){
         super(initspi, respspi, msgid);
@@ -34,7 +38,8 @@ public class PktMalformed extends PktIKE{
         try {
             bout.flush();
         } catch (IOException e){
-            LogUtils.logException(e, this.getClass().getName(), "Byte stream flush error! ");
+            LOGGER.error("Byte stream flush error! ");
+            e.printStackTrace();
         }
         return bout.toByteArray();
     }
@@ -49,21 +54,24 @@ public class PktMalformed extends PktIKE{
                     if (initspi.length==8){
                         bAos.writeBytes(initspi);
                     }else{
-                        LogUtils.logErrExit(this.getClass().getName(), "Init SPI length error! ");
+                        LOGGER.error("Init SPI length error! ");
+                        System.exit(-1);
                     }
                     break;
                 case "msgid":
                     if(msgid.length==4){
                         bAos.writeBytes(msgid);
                     }else{
-                        LogUtils.logErrExit(this.getClass().getName(), "Message ID length error! ");
+                        LOGGER.error("Message ID length error! ");
+                        System.exit(-1);
                     }
                     break;
                 case "respspi":
                     if (respspi.length==8){
                         bAos.writeBytes(respspi);
                     }else{
-                        LogUtils.logErrExit(this.getClass().getName(), "Resp SPI length error! ");
+                        LOGGER.error("Resp SPI length error! ");
+                        System.exit(-1);
                     }
                     break;
                 default:

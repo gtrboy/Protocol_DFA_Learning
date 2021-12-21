@@ -3,6 +3,8 @@ package gtrboy.learning.IKEv2.messages;
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.dom4j.Element;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -19,6 +21,8 @@ public class PktIKEAuthPSK extends PktIKEEnc{
     private byte[] ipsecSPI = null;
 
     private static final String KEY_PAD = "Key Pad for IKEv2";
+
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktIKEAuthPSK(String patternFile, byte[] initspi, byte[] respspi, int msgid, IKEv2KeysGener keysGen,
                          byte[] r_nonce, byte[] i_initsa_pkt, String local_address, byte[] ipsec_spi) {
@@ -76,7 +80,8 @@ public class PktIKEAuthPSK extends PktIKEEnc{
                     bAos.writeBytes(tmp);
                     bInitIDPld.writeBytes(tmp);
                 } catch (NumberFormatException e){
-                    LogUtils.logException(e, this.getClass().getName(), "Convert Hex Error! ");
+                    LOGGER.error("Convert Hex Error! ");
+                    e.printStackTrace();
                 }
             }
         }
@@ -106,7 +111,8 @@ public class PktIKEAuthPSK extends PktIKEEnc{
                 try {
                     bAos.writeBytes(DataUtils.hexStrToBytes(element.getText()));
                 } catch (NumberFormatException e){
-                    LogUtils.logException(e, this.getClass().getName(), "Convert Hex Error! ");
+                    LOGGER.error("Convert Hex Error! ");
+                    e.printStackTrace();
                 }
             }
         }
@@ -137,11 +143,11 @@ public class PktIKEAuthPSK extends PktIKEEnc{
             e.printStackTrace();
         }
 
-        //LogUtils.logDebug("TEST", "INIT_SA Packet: " + DataUtils.bytesToHexStr(iInitSaPkt));
-        //LogUtils.logDebug("TEST", "Response Nonce: " + DataUtils.bytesToHexStr(rNonce));
-        //LogUtils.logDebug("TEST", "SK_pi: " + DataUtils.bytesToHexStr(keysGenerator.getSkPi()));
-        //LogUtils.logDebug("TEST", "Init ID Payload: " + DataUtils.bytesToHexStr(initIDPayload));
-        //LogUtils.logDebug("TEST", "PSK: " + keysGenerator.getPsk());
+        //LOGGER.debug("INIT_SA Packet: " + DataUtils.bytesToHexStr(iInitSaPkt));
+        //LOGGER.debug("Response Nonce: " + DataUtils.bytesToHexStr(rNonce));
+        //LOGGER.debug("SK_pi: " + DataUtils.bytesToHexStr(keysGenerator.getSkPi()));
+        //LOGGER.debug("Init ID Payload: " + DataUtils.bytesToHexStr(initIDPayload));
+        //LOGGER.debug("PSK: " + keysGenerator.getPsk());
         return authData;
     }
 
@@ -153,7 +159,8 @@ public class PktIKEAuthPSK extends PktIKEEnc{
         bAos.writeBytes(hdr);
 
         if(hdr.length != 4){
-            LogUtils.logErrExit(this.getClass().getName(), "Invalid payload header length: " + hdr.length);
+            LOGGER.error("Invalid payload header length: " + hdr.length);
+            System.exit(-1);
         }
 
         /*
@@ -217,7 +224,8 @@ public class PktIKEAuthPSK extends PktIKEEnc{
                 try {
                     bAos.writeBytes(DataUtils.hexStrToBytes(curele.getText()));
                 } catch (NumberFormatException e){
-                    LogUtils.logException(e, this.getClass().getName(), "Convert Hex Error! ");
+                    LOGGER.error("Convert Hex Error! ");
+                    e.printStackTrace();
                 }
             }
         }
