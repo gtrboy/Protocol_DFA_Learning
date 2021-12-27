@@ -30,13 +30,7 @@
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="LearnLog" level="debug" additivity="false">
-            <!-- 对info级别的日志，输出到console -->
-            <AppenderRef ref="console" level="info" />
-            <!-- 对error级别的日志，输出到err，即上面定义的RollingFile -->
-            <AppenderRef ref="logfile" level="debug" />
-        </Logger>
-        <Root level="info">
+        <Root level="debug">
             <!-- 对info级别的日志，输出到console -->
             <AppenderRef ref="console" level="info" />
             <!-- 对error级别的日志，输出到err，即上面定义的RollingFile -->

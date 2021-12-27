@@ -20,8 +20,6 @@ public class PktIKEAuthPSK extends PktIKEEnc{
     private byte[] initIDPayload = null;
     private byte[] ipsecSPI = null;
 
-    private static final String KEY_PAD = "Key Pad for IKEv2";
-
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktIKEAuthPSK(String patternFile, byte[] initspi, byte[] respspi, int msgid, IKEv2KeysGener keysGen,
@@ -103,7 +101,7 @@ public class PktIKEAuthPSK extends PktIKEEnc{
             if(eleName.equals("auth_data")){
                 int authLen = Integer.parseInt(element.attribute("size").getText());
                 if(isEnc){
-                    bAos.writeBytes(calcAuth());
+                    bAos.writeBytes(keysGenerator.calcAuth(iInitSaPkt, rNonce, initIDPayload));
                 }else{
                     bAos.writeBytes(DataUtils.genRandomBytes(authLen));
                 }
@@ -117,38 +115,6 @@ public class PktIKEAuthPSK extends PktIKEEnc{
             }
         }
         return bAos.toByteArray();
-    }
-
-
-    /** Calculate authentication with PSK.
-     * InitiatorSignedOctets = RealMessage1 | NonceRData | MACedIDForI
-     * MACedIDForI = prf(SK_pi, RestOfInitIDPayload)
-     * RestOfInitIDPayload = IDType | RESERVED | InitIDData
-     * AUTH = prf( prf(Shared Secret, "Key Pad for IKEv2"), <InitiatorSignedOctets>)
-     */
-
-    private byte[] calcAuth(){
-        byte[] skPi = keysGenerator.getSkPi();
-        int macLen = skPi.length;
-        byte[] macedIDForIBuf = null;
-        byte[] authData = null;
-        String prfFunc = keysGenerator.prfAlg;
-        ByteBuffer initSignedOctetsBuf = ByteBuffer.allocate(iInitSaPkt.length + rNonce.length + macLen);
-        try{
-            macedIDForIBuf = IKEv2KeysGener.getMacDigest(skPi, initIDPayload, prfFunc);
-            initSignedOctetsBuf.put(iInitSaPkt).put(rNonce).put(macedIDForIBuf);
-            byte[] tmpKey = IKEv2KeysGener.getMacDigest(keysGenerator.getPsk().getBytes(), KEY_PAD.getBytes(), prfFunc);
-            authData = IKEv2KeysGener.getMacDigest(tmpKey, initSignedOctetsBuf.array(), prfFunc);
-        } catch (Exception e){
-            e.printStackTrace();
-        }
-
-        //LOGGER.debug("INIT_SA Packet: " + DataUtils.bytesToHexStr(iInitSaPkt));
-        //LOGGER.debug("Response Nonce: " + DataUtils.bytesToHexStr(rNonce));
-        //LOGGER.debug("SK_pi: " + DataUtils.bytesToHexStr(keysGenerator.getSkPi()));
-        //LOGGER.debug("Init ID Payload: " + DataUtils.bytesToHexStr(initIDPayload));
-        //LOGGER.debug("PSK: " + keysGenerator.getPsk());
-        return authData;
     }
 
     protected byte[] ParseSaPayload(Element saRoot){

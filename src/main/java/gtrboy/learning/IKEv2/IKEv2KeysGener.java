@@ -25,15 +25,30 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
+
+/*   Algo    key_len     IV_len( = block_size)
+*    DES       64                 64
+*  AES-128     128                128
+*  AES-192     192                128
+*  AES-256     256                128
+ */
+
 public class IKEv2KeysGener {
     private DHPrivateKeySpec localPrivateKeySpec;
     private byte[] pub_key;
     private byte[] sharedSecret = null;
     private byte[] sKeySeed = null;
-    private int integ_key_len = 64;
-    private int enc_key_len = 32;
-    private int aes_block_size = 16;
-    private int prf_key_len = 64;
+    private final int _hmacKeyLen;
+    private final int _checksumLen;
+    private final int _encKeyLen;
+    private final int _encBlockSize;
+    private final byte[] _iv;
+    public String _hmacAlg;
+    public String[] _encAlg = new String[2];
+    private final String _psk;
+    private final int _dhGroup;
+    
+    //private final int _hmacKeyLen;
     private byte[] skD = null;
     private byte[] skAi = null;
     private byte[] skAr = null;
@@ -43,36 +58,93 @@ public class IKEv2KeysGener {
     private byte[] skPr = null;
 
     private static final String KEY_DH = "DH";
-    private int dhGroup = 14;
     private static final int DH_GROUP_1024_BIT_MODP_DATA_LEN = 128;
     private static final int DH_GROUP_2048_BIT_MODP_DATA_LEN = 256;
-    private static final String IV_HEX_STR = "a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0";
-    private byte[] iv;
-    public String prfAlg = null;
-    public String intgAlg = null;
-    private String psk = null;
+    private static final String KEY_PAD = "Key Pad for IKEv2";
+    //private static final String IV_HEX_STR = "a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0";
+    
 
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
 
-    public IKEv2KeysGener(int dh_group, String prf, String integrity, String preSecKey, int intKeyLen,
-                          int encKeyLen, int prfKeyLen, int aesBlockSize){
-        dhGroup = dh_group;
-        prfAlg = prf;
-        intgAlg = integrity;
-        psk = preSecKey;
-        integ_key_len = intKeyLen;
-        enc_key_len = encKeyLen;
-        aes_block_size = aesBlockSize;
-        prf_key_len = prfKeyLen;
-        iv = DataUtils.hexStrToBytes(IV_HEX_STR);
+    public IKEv2KeysGener(int dh_group, String encryption, String integrity, String preSecKey){
+        switch (encryption){
+            case "DES":
+                _encAlg[0] = "DES";
+                _encAlg[1] = "DES/CBC/NoPadding";
+                _encKeyLen = 8;
+                _encBlockSize = 8;
+                break;
+            case "3DES":
+                _encAlg[0] = "DESede";
+                _encAlg[1] = "DESede/CBC/NoPadding";
+                _encKeyLen = 24;
+                _encBlockSize = 8;
+                break;
+            case "AES-CBC-128":
+                _encAlg[0] = "AES";
+                _encAlg[1] = "AES/CBC/NoPadding";
+                _encKeyLen = 16;
+                _encBlockSize = 16;
+                break;
+            case "AES-CBC-256":
+                _encAlg[0] = "AES";
+                _encAlg[1] = "AES/CBC/NoPadding";
+                _encKeyLen = 32;
+                _encBlockSize = 16;
+                break;
+            default:
+                _encKeyLen = 0;
+                _encBlockSize = 0;
+                LOGGER.error("Encryption algorithm is invalid! ");
+                System.exit(-1);
+        }
+
+        switch (integrity){
+            case "MD5":
+                _hmacAlg = "HmacMD5";
+                _hmacKeyLen = 16;
+                _checksumLen = 12;
+                break;
+            case "SHA1":
+                _hmacAlg = "HmacSHA1";
+                _hmacKeyLen = 20;
+                _checksumLen = 12;
+                break;
+            case "SHA256":
+                _hmacAlg = "HmacSHA256";
+                _hmacKeyLen = 32;
+                _checksumLen = 16;
+                break;
+            case "SHA384":
+                _hmacAlg = "HmacSHA384";
+                _hmacKeyLen = 48;
+                _checksumLen = 24;
+                break;
+            case "SHA512":
+                _hmacAlg = "HmacSHA512";
+                _hmacKeyLen = 64;
+                _checksumLen = 32;
+                break;
+            default:
+                _hmacKeyLen = 0;
+                _checksumLen = 0;
+                LOGGER.error("Integrity algorithm is invalid! ");
+                System.exit(-1);
+        }
+        
+        _dhGroup = dh_group;
+        _psk = preSecKey;
+        
+        //iv = DataUtils.hexStrToBytes(IV_HEX_STR);
+        _iv = DataUtils.genRandomBytes(_encBlockSize);
         InitDHKeys();
     }
 
     private void InitDHKeys() {
         BigInteger prime = BigInteger.ZERO;
         int keySize = 0;
-        switch (dhGroup) {
+        switch (_dhGroup) {
             case 2:
                 prime =
                         BigIntegerUtils.unsignedHexStringToBigInteger(
@@ -128,19 +200,19 @@ public class IKEv2KeysGener {
             sharedSecret = getSharedKey(localPrivateKeySpec, r_ke);
             ByteBuffer keyBuffer = ByteBuffer.allocate(i_nonce.length + r_nonce.length);
             keyBuffer.put(i_nonce).put(r_nonce);
-            sKeySeed = generateSKeySeed(prfAlg, keyBuffer.array(), sharedSecret);
+            sKeySeed = generateSKeySeed(_hmacAlg, keyBuffer.array(), sharedSecret);
 
             ByteBuffer dataToSign = ByteBuffer.allocate(i_nonce.length + r_nonce.length + ispi.length + rspi.length);
             dataToSign.put(i_nonce).put(r_nonce).put(ispi).put(rspi);
-            int keysLen = enc_key_len*2 + prf_key_len*3 + integ_key_len*2;
-            byte[] keyMats = generateKeyMat(prfAlg, sKeySeed, dataToSign.array(), keysLen);
-            skD = new byte[prf_key_len];
-            skAi = new byte[integ_key_len];
-            skAr = new byte[integ_key_len];
-            skEi = new byte[enc_key_len];
-            skEr = new byte[enc_key_len];
-            skPi = new byte[prf_key_len];
-            skPr = new byte[prf_key_len];
+            int keysLen = _encKeyLen*2 + _hmacKeyLen*3 + _hmacKeyLen*2;
+            byte[] keyMats = generateKeyMat(_hmacAlg, sKeySeed, dataToSign.array(), keysLen);
+            skD = new byte[_hmacKeyLen];
+            skAi = new byte[_hmacKeyLen];
+            skAr = new byte[_hmacKeyLen];
+            skEi = new byte[_encKeyLen];
+            skEr = new byte[_encKeyLen];
+            skPi = new byte[_hmacKeyLen];
+            skPr = new byte[_hmacKeyLen];
             ByteBuffer keyMatBuffer = ByteBuffer.wrap(keyMats);
             keyMatBuffer.get(skD).get(skAi).get(skAr).get(skEi).get(skEr).get(skPi).get(skPr);
             LOGGER.debug("skD: " + DataUtils.bytesToHexStr(skD));
@@ -150,7 +222,7 @@ public class IKEv2KeysGener {
             LOGGER.debug("skEr: " + DataUtils.bytesToHexStr(skEr));
             LOGGER.debug("skPi: " + DataUtils.bytesToHexStr(skPi));
             LOGGER.debug("skPr: " + DataUtils.bytesToHexStr(skPr));
-            LOGGER.info("{},{},{},{},\"AES-CBC-256 [RFC3602]\",{},{},\"HMAC_SHA2_512_256 [RFC4868]\"",
+            LOGGER.debug("{},{},{},{},\"AES-CBC-256 [RFC3602]\",{},{},\"HMAC_SHA2_512_256 [RFC4868]\"",
                     DataUtils.bytesToHexStr(ispi),
                     DataUtils.bytesToHexStr(rspi),
                     DataUtils.bytesToHexStr(skEi),
@@ -173,18 +245,18 @@ public class IKEv2KeysGener {
             sharedSecret = getSharedKey(localPrivateKeySpec, r_ke);
             ByteBuffer bBuf = ByteBuffer.allocate(sharedSecret.length + i_nonce.length + r_nonce.length);
             bBuf.put(sharedSecret).put(i_nonce).put(r_nonce);
-            sKeySeed = generateSKeySeed(prfAlg, skD_old, bBuf.array());
+            sKeySeed = generateSKeySeed(_hmacAlg, skD_old, bBuf.array());
             ByteBuffer dataToSign = ByteBuffer.allocate(i_nonce.length + r_nonce.length + ispi.length + rspi.length);
             dataToSign.put(i_nonce).put(r_nonce).put(ispi).put(rspi);
-            int keysLen = enc_key_len*2 + prf_key_len*3 + integ_key_len*2;
-            byte[] keyMats = generateKeyMat(prfAlg, sKeySeed, dataToSign.array(), keysLen);
-            skD = new byte[prf_key_len];
-            skAi = new byte[integ_key_len];
-            skAr = new byte[integ_key_len];
-            skEi = new byte[enc_key_len];
-            skEr = new byte[enc_key_len];
-            skPi = new byte[prf_key_len];
-            skPr = new byte[prf_key_len];
+            int keysLen = _encKeyLen*2 + _hmacKeyLen*3 + _hmacKeyLen*2;
+            byte[] keyMats = generateKeyMat(_hmacAlg, sKeySeed, dataToSign.array(), keysLen);
+            skD = new byte[_hmacKeyLen];
+            skAi = new byte[_hmacKeyLen];
+            skAr = new byte[_hmacKeyLen];
+            skEi = new byte[_encKeyLen];
+            skEr = new byte[_encKeyLen];
+            skPi = new byte[_hmacKeyLen];
+            skPr = new byte[_hmacKeyLen];
             ByteBuffer keyMatBuffer = ByteBuffer.wrap(keyMats);
             keyMatBuffer.get(skD).get(skAi).get(skAr).get(skEi).get(skEr).get(skPi).get(skPr);
             LOGGER.debug("skD: " + DataUtils.bytesToHexStr(skD));
@@ -194,7 +266,7 @@ public class IKEv2KeysGener {
             LOGGER.debug("skEr: " + DataUtils.bytesToHexStr(skEr));
             LOGGER.debug("skPi: " + DataUtils.bytesToHexStr(skPi));
             LOGGER.debug("skPr: " + DataUtils.bytesToHexStr(skPr));
-            LOGGER.info("{},{},{},{},\"AES-CBC-256 [RFC3602]\",{},{},\"HMAC_SHA2_512_256 [RFC4868]\"",
+            LOGGER.debug("{},{},{},{},\"AES-CBC-256 [RFC3602]\",{},{},\"HMAC_SHA2_512_256 [RFC4868]\"",
                     DataUtils.bytesToHexStr(ispi),
                     DataUtils.bytesToHexStr(rspi),
                     DataUtils.bytesToHexStr(skEi),
@@ -210,10 +282,10 @@ public class IKEv2KeysGener {
         }
     }
 
-    private byte[] generateSKeySeed(String prfAlgorithm, byte[] key, byte[] content) {
+    private byte[] generateSKeySeed(String _hmacAlgorithm, byte[] key, byte[] content) {
         try {
-            SecretKeySpec prfKeySpec = new SecretKeySpec(key, prfAlgorithm);
-            Mac prfMac = Mac.getInstance(prfAlgorithm);
+            SecretKeySpec prfKeySpec = new SecretKeySpec(key, _hmacAlgorithm);
+            Mac prfMac = Mac.getInstance(_hmacAlgorithm);
             prfMac.init(prfKeySpec);
             ByteBuffer sharedKeyBuffer = ByteBuffer.wrap(content);
             prfMac.update(sharedKeyBuffer);
@@ -254,11 +326,11 @@ public class IKEv2KeysGener {
     }
 
     private byte[] generateKeyMat(
-            String prfAlgorithm, byte[] prfKey, byte[] dataToSign, int keyMaterialLen)
+            String hmacAlgorithm, byte[] prfKey, byte[] dataToSign, int keyMaterialLen)
             throws InvalidKeyException {
         try {
-            SecretKeySpec prfKeySpec = new SecretKeySpec(prfKey, prfAlgorithm);
-            Mac prfMac = Mac.getInstance(prfAlgorithm);
+            SecretKeySpec prfKeySpec = new SecretKeySpec(prfKey, hmacAlgorithm);
+            Mac prfMac = Mac.getInstance(hmacAlgorithm);
 
             ByteBuffer keyMatBuffer = ByteBuffer.allocate(keyMaterialLen);
 
@@ -320,59 +392,89 @@ public class IKEv2KeysGener {
         return skPr;
     }
 
-    public String getPsk(){
-        return psk;
+    public String get_psk(){
+        return _psk;
     }
 
-    public byte[] encrypt(byte[] contentBytes, byte[] keyBytes)
-            throws Exception {
-        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(DataUtils.hexStrToBytes(IV_HEX_STR));
-        // Do not use AES/CBC/PKCS5Padding
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivParameterSpec);
-        byte[] byEnd = cipher.doFinal(contentBytes);
-        return byEnd;
-    }
+    
+    // Encryption and Decryption
 
-    public byte[] encrypt(byte[] contentBytes, byte[] keyBytes, byte[] iv)
-            throws Exception {
-        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+    public byte[] encrypt(byte[] contentBytes, byte[] keyBytes, byte[] iv) throws Exception {
+        SecretKeySpec keySpec;
+        keySpec = new SecretKeySpec(keyBytes, _encAlg[0]);
+        Cipher cipher = Cipher.getInstance(_encAlg[1]);
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
         // Do not use AES/CBC/PKCS5Padding
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivParameterSpec);
-        byte[] byEnd = cipher.doFinal(contentBytes);
-        return byEnd;
+        return cipher.doFinal(contentBytes);
     }
 
-
-    public byte[] decrypt(byte[] encryptedBytes, byte[] keyBytes)
-            throws Exception {
-        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(DataUtils.hexStrToBytes(IV_HEX_STR));
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivParameterSpec);
-        byte[] byEnd = cipher.doFinal(encryptedBytes);
-        return byEnd;
-    }
-
-    public byte[] decrypt(byte[] encryptedBytes, byte[] keyBytes, byte[] iv)
-            throws Exception {
-        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+    public byte[] decrypt(byte[] encryptedBytes, byte[] keyBytes, byte[] iv) throws Exception {
+        SecretKeySpec keySpec;
+        keySpec = new SecretKeySpec(keyBytes, _encAlg[0]);
+        Cipher cipher = Cipher.getInstance(_encAlg[1]);
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+        // Do not use AES/CBC/PKCS5Padding
         cipher.init(Cipher.DECRYPT_MODE, keySpec, ivParameterSpec);
-        byte[] byEnd = cipher.doFinal(encryptedBytes);
-        return byEnd;
+        return cipher.doFinal(encryptedBytes);
+    }
+    
+    
+    // Integrity
+    public byte[] calChecksum(byte[] content){
+        //byte[] skAi = keysGenerator.getSkAi();
+        byte[] checksum = null;
+        if(isKeysPrepared()) {
+            try {
+                byte[] hash = getMacDigest(skAi, content, _hmacAlg);
+                int checksumLen = hash.length / 2;
+                checksum = new byte[checksumLen];
+                System.arraycopy(hash, 0, checksum, 0, checksumLen);
+            }catch (NoSuchAlgorithmException | InvalidKeyException e){
+                e.printStackTrace();
+            }
+        }else{
+            LOGGER.error("Keys are not prepared! ");
+        }
+        return checksum;
     }
 
-    public static byte[] getMacDigest(byte[] key, byte[] content, String algorithm) throws NoSuchAlgorithmException, InvalidKeyException {
+    public byte[] getMacDigest(byte[] key, byte[] content, String algorithm) throws NoSuchAlgorithmException, InvalidKeyException {
         SecretKey sKey = new SecretKeySpec(key, algorithm);
         Mac mac = Mac.getInstance(algorithm);
         mac.init(sKey);
         mac.update(content);
         return mac.doFinal();
+    }
+
+    /** Calculate authentication with _psk.
+     * InitiatorSignedOctets = RealMessage1 | NonceRData | MACedIDForI
+     * MACedIDForI = prf(SK_pi, RestOfInitIDPayload)
+     * RestOfInitIDPayload = IDType | RESERVED | InitIDData
+     * AUTH = prf( prf(Shared Secret, "Key Pad for IKEv2"), <InitiatorSignedOctets>)
+     * */
+    public byte[] calcAuth(byte[] iInitSaPkt, byte[] rNonce, byte[] initIDPayload){
+        //byte[] skPi = keysGenerator.getSkPi();
+        int macLen = skPi.length;
+        byte[] macedIDForIBuf;
+        byte[] authData = null;
+        String prfFunc = _hmacAlg;
+        ByteBuffer initSignedOctetsBuf = ByteBuffer.allocate(iInitSaPkt.length + rNonce.length + macLen);
+        try{
+            macedIDForIBuf = getMacDigest(skPi, initIDPayload, prfFunc);
+            initSignedOctetsBuf.put(iInitSaPkt).put(rNonce).put(macedIDForIBuf);
+            byte[] tmpKey = getMacDigest(_psk.getBytes(), KEY_PAD.getBytes(), prfFunc);
+            authData = getMacDigest(tmpKey, initSignedOctetsBuf.array(), prfFunc);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+        //LOGGER.debug("INIT_SA Packet: " + DataUtils.bytesToHexStr(iInitSaPkt));
+        //LOGGER.debug("Response Nonce: " + DataUtils.bytesToHexStr(rNonce));
+        //LOGGER.debug("SK_pi: " + DataUtils.bytesToHexStr(keysGenerator.getSkPi()));
+        //LOGGER.debug("Init ID Payload: " + DataUtils.bytesToHexStr(initIDPayload));
+        //LOGGER.debug("_psk: " + keysGenerator.get_psk());
+        return authData;
     }
 
     public boolean isKeysPrepared(){
@@ -385,11 +487,11 @@ public class IKEv2KeysGener {
     }
 
     public int getIVLen(){
-        return aes_block_size;
+        return _encBlockSize;
     }
 
     public int getChecksumLen(){
-        return integ_key_len / 2;
+        return _checksumLen;
     }
 
 

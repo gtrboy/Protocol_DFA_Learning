@@ -37,12 +37,12 @@ public class TestMain {
         IKEv2Config config = new IKEv2Config("IKEv2/ikev2_config.properties");
         //LogUtils.LOG_LEVEL = config.getDebug();
         IKEv2Client client = new IKEv2Client(config);
-        client.prepare();
+        //client.prepare();
 
 
         test(client);
 
-        client.reset();
+        //client.reset();
 
         String dateEnd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
         long et = DataUtils.fromDateStringToLong(dateEnd);
@@ -82,20 +82,46 @@ public class TestMain {
 
     }
 
+    /*
+    public static void test(IKEv2Client client) throws IOException {
+        String ret;
+        while(true){
+            client.InitSocket();
+            ret = client.saInitWithAcceptedSa();
+            logger.debug("ret: " + ret);
+            client.reset();
+        }
+    }
+
+     */
+
+
     public static void test(IKEv2Client client) throws IOException {
         String ret;
 
-        ret = client.saInitWithAcceptedSa();
-        logger.debug("ret: " + ret);
+        client.prepare();
+
+        //ret = client.saInitWithAcceptedSa();
+        //logger.debug("ret: " + ret);
 
         ret = client.authWithPsk();
         logger.debug("ret: " + ret);
 
+        //ret = client.rekeyIkeSa();
+        //System.out.println("ret: " + ret);
+
+        //ret = client.delOldIkeSa();
+        //System.out.println("ret: " + ret);
+
+        //ret = client.delCurIkeSa();
+        //System.out.println("ret: " + ret);
+
         //ret = client.authWithPsk();
         //System.out.println("ret: " + ret);
 
-
     }
+
+
 
     public static void test5(IKEv2Client client){
         String ret;

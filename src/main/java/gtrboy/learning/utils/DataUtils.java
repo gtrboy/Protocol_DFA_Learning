@@ -119,7 +119,7 @@ public final class DataUtils {
 
     public static long fromDateStringToLong(String inVal) {
         Date date = null;
-        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS");
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
         try {
             date = inputFormat.parse(inVal);
         } catch (Exception e) {

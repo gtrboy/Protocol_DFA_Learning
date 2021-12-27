@@ -10,6 +10,7 @@ import java.net.DatagramPacket;
 
 public class IKEv2EncParser extends IKEv2Parser{
     protected IKEv2KeysGener keyG;
+    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
     //private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2EncParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
@@ -30,6 +31,7 @@ public class IKEv2EncParser extends IKEv2Parser{
         //LOGGER.debug("encDataLen: " + encDataLen);
 
         decData = parseDecData(encDataLen, peerIV);
+        LOGGER.debug("Dec Data: " + DataUtils.bytesToHexStr(decData));
         //LOGGER.debug("DECDATA: "+DataUtils.bytesToHexStr(decData));
         pb = decData;
         offset = 0;
@@ -43,9 +45,8 @@ public class IKEv2EncParser extends IKEv2Parser{
     }
 
     private byte[] parseDecData(int dataLen, byte[] iv) throws Exception {
-        byte[] encData = new byte[dataLen];;
+        byte[] encData = new byte[dataLen];
         System.arraycopy(pb, AO(dataLen), encData, 0, dataLen);
-        byte[] decData = keyG.decrypt(encData, keyG.getSkEr(), iv);
-        return decData;
+        return keyG.decrypt(encData, keyG.getSkEr(), iv);
     }
 }

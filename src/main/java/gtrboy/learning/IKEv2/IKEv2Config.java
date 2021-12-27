@@ -1,31 +1,28 @@
 package gtrboy.learning.IKEv2;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.util.Properties;
 
 public class IKEv2Config {
 
-    private Properties props;
-    private String peerAddress;  // ip address of the ikev2 server
-    private String localAddress;   // local address of the client
-    private int port = 500;  // ikev2 server port, UDP
-    private float timeout = 5;  //timeout
-    private int dhGroup = 14;
-    private String prfFunc = null;
-    private String intgFunc = null;
-    private String psk = null;
-    private int integ_key_len;
-    private int enc_key_len;
-    private int prf_key_len;
-    private int aes_block_size;
-    private int debug;
-    private int retry_num;
-    private String telnet_password = null;
+    private final String peerAddress;  // ip address of the ikev2 server
+    private final String localAddress;   // local address of the client
+    private final int port;  // ikev2 server port, UDP
+    private final float timeout;  //timeout
+
+    private final String hmacFunc;   // integrity function
+    private final String encFunc;    // encryption function
+    private final String psk;
+    private final int dhGroup;
+
+    private final int retry_num;
+    private final String telnet_username;
+    private final String telnet_password;
+    private final String sul;
 
 
     public IKEv2Config(String fileName) throws IOException {
-        props = new Properties();
+        Properties props = new Properties();
         //"ikev2_config.properties"
         InputStream in = this.getClass().getClassLoader().getResourceAsStream(fileName);
         props.load(in);
@@ -35,21 +32,20 @@ public class IKEv2Config {
         port = Integer.parseInt(props.getProperty("port"));
         timeout = Float.parseFloat(props.getProperty("timeout"));
 
-        dhGroup = Integer.parseInt(props.getProperty("DH_group"));
-        prfFunc = props.getProperty("prf");
-        intgFunc = props.getProperty("integrity");
-        integ_key_len = Integer.parseInt(props.getProperty("integ_key_len"));
-        enc_key_len = Integer.parseInt(props.getProperty("enc_key_len"));
-        aes_block_size = Integer.parseInt(props.getProperty("aes_block_size"));
-        prf_key_len = Integer.parseInt(props.getProperty("prf_key_len"));
+        hmacFunc = props.getProperty("hmac_algo");
+        encFunc = props.getProperty("enc_algo");
         psk = props.getProperty("psk");
+        dhGroup = Integer.parseInt(props.getProperty("dh_group"));
+
+        telnet_username = props.getProperty("tel_user");
         telnet_password = props.getProperty("tel_pass");
-        debug = Integer.parseInt(props.getProperty("debug"));
         retry_num = Integer.parseInt(props.getProperty("retry"));
+        sul = props.getProperty("sul");
     }
 
-    public int getDebug(){
-        return debug;
+
+    public String getTelUser(){
+        return telnet_username;
     }
 
     public String getTelPass(){
@@ -72,38 +68,29 @@ public class IKEv2Config {
         return timeout;
     }
 
-    public int getDhGroup(){ return dhGroup; }
-
-    public String getPrfFunc(){
-        return prfFunc;
+    public int getDhGroup(){
+        return dhGroup;
     }
 
-    public String getIntgFunc() {
-        return intgFunc;
+    public String getHmacFunc(){
+        return hmacFunc;
     }
+
 
     public String getPsk(){
         return psk;
     }
 
-    public int getIntegKeyLen(){
-        return integ_key_len;
-    }
-
-    public int getEncKeyLen(){
-        return enc_key_len;
-    }
-
-    public int getPrfKeyLen(){
-        return prf_key_len;
-    }
-
-    public int getAESBlockSize(){
-        return aes_block_size;
+    public String getEncFunc(){
+        return encFunc;
     }
 
     public int getRetryNum(){
         return retry_num;
+    }
+
+    public String getSul(){
+        return sul;
     }
 
 }

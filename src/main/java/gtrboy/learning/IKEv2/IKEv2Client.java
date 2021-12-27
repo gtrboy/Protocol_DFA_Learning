@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 public class IKEv2Client {
 
-    private IKEv2Config clientConf;
+    private final IKEv2Config clientConf;
     private byte[] ispi = null;
     private byte[] rspi = null;
     private byte[] iOldSpi = null;
@@ -29,10 +29,10 @@ public class IKEv2Client {
     private int curMsgId = 0;
     private int oldMsgId = 0;
     private int wantedMsgId = 0;
-    private String peeraddr;
-    private String localaddr;
-    private int port;
-    private float timeout;
+    private final String peeraddr;
+    private final String localaddr;
+    private final int port;
+    private final float timeout;
     private DatagramSocket ds;
     //IKEv2Parser parser;
     private IKEv2KeysGener curKeyGen;
@@ -42,15 +42,14 @@ public class IKEv2Client {
     private byte[] rChildSpi;
     private byte[] iOldChildSpi;
     private byte[] rOldChildSpi;
-    private String telnetPassword;
-    private TelnetMain ciscoTel;
+    private final TelnetMain telnetClient;
     private int gRetryNum=0;
     //private byte[] lastPkt;
+    private final String sulName;
 
 
     private static final String TIMEOUT = "TIMEOUT";
     private static final String ERROR = "ERROR";
-    private static final String CISCO_RESET_CMD = "clear crypto ikev2 sa fast";
     private static final int NONCE_LEN = 20;
     private static final int IPSEC_SPI_LEN = 4;
     private static final int IKE_SPI_LEN = 8;
@@ -61,6 +60,9 @@ public class IKEv2Client {
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2Client(IKEv2Config config) {
+        String telnetUserName;
+        String telnetPassword;
+
         LOGGER.debug("CREATE IKEv2 CLIENT! ");
         clientConf = config;
         curMsgId = 0;
@@ -68,10 +70,13 @@ public class IKEv2Client {
         localaddr = config.getLocalAddress();
         port = config.getPort();
         timeout = config.getTimeout();
-        telnetPassword = config.getTelPass();
         gRetryNum = config.getRetryNum();
-        ciscoTel = new TelnetMain(peeraddr, telnetPassword);
-        ciscoTel.connect();
+        sulName = config.getSul();
+
+        telnetUserName = config.getTelUser();
+        telnetPassword = config.getTelPass();
+        telnetClient = new TelnetMain(peeraddr, telnetUserName, telnetPassword, sulName);
+        telnetClient.connect();
 
         //curKeyGen = prepareKeyGen(config);
 
@@ -81,17 +86,12 @@ public class IKEv2Client {
     private IKEv2KeysGener prepareKeyGen(IKEv2Config config){
 
         int dhGroup = config.getDhGroup();
-        String prfAlg = config.getPrfFunc();
-        String intgAlg = config.getIntgFunc();
+        String encAlg = config.getEncFunc();
+        String hmacAlg = config.getHmacFunc();
         String psk = config.getPsk();
-        int integ_key_len = config.getIntegKeyLen();
-        int enc_key_len = config.getEncKeyLen();
-        int prf_key_len = config.getPrfKeyLen();
-        int aes_block_size = config.getAESBlockSize();
 
         // Initialize key generator
-        IKEv2KeysGener keyGen = new IKEv2KeysGener(dhGroup, prfAlg, intgAlg, psk, integ_key_len, enc_key_len, prf_key_len, aes_block_size);
-        return keyGen;
+        return new IKEv2KeysGener(dhGroup, encAlg, hmacAlg, psk);
     }
 
     private void addMsgId(boolean isCurrent){
@@ -132,10 +132,10 @@ public class IKEv2Client {
             msgId = DataUtils.bytesToIntB(bPkt, 20);
             LOGGER.debug("Msg Id: " + msgId);
             // discard cmd del information packet
-            if(bPkt[18]==0x25 && bPkt[19]==0x00){
-
+            if(bPkt[18]==0x25 && bPkt[19]==0x00 || bPkt[19]==0x08){
+                continue;
             }else if(msgId!=wantedMsgId) {
-
+                continue;
             }else {
                 break;
             }
@@ -184,18 +184,25 @@ public class IKEv2Client {
         r_nonce = null;
 
         // 通过telnet清除目标设备的ike sa
-        //ciscoTelRemoveSa();
-        ciscoTel.sendCommand(CISCO_RESET_CMD);
+        switch (sulName){
+            case "cisco7200":
+                telnetClient.resetCisco();
+                break;
+            case "fortigate":
+                telnetClient.resetFG();
+                break;
+            default:
+                LOGGER.error("Invalid SUL Name! ");
+                System.exit(-1);
+        }
+        
         ds.disconnect();
         ds.close();
         ds = null;
     }
 
-    private void resetSocketBuffer(){
-        ds.disconnect();
-    }
 
-    private void InitSocket() {
+    public void InitSocket() {
         try{
             ds = new DatagramSocket(500);
             ds.setSoTimeout((int) (timeout*1000));
@@ -220,7 +227,7 @@ public class IKEv2Client {
     }
 
     /*
-    public void ciscoTelRemoveSa(){
+    public void telnetClientRemoveSa(){
         TelnetMain tel = new TelnetMain(peeraddr, telnetPassword);
         tel.connect();
         tel.sendCommand(CISCO_RESET_CMD);
@@ -237,7 +244,7 @@ public class IKEv2Client {
         String retStr = null;
         prepareInitSa();
         byte[] respSPI = DataUtils.hexStrToBytes("0000000000000000");
-        PktIKEInitSA pkt = new PktIKEInitSA("ike_init_sa_acc_sa.xml", ispi, respSPI, curMsgId, i_ke, i_nonce);
+        PktIKEInitSA pkt = new PktIKEInitSA(sulName + "/ike_init_sa_acc_sa.xml", ispi, respSPI, curMsgId, i_ke, i_nonce);
         byte[] pktBytes = pkt.getPacketBytes();
 
         int round = gRetryNum;
@@ -290,7 +297,7 @@ public class IKEv2Client {
             retStr = ERROR;
         }else {
             byte[] i_child_spi = DataUtils.genRandomBytes(IPSEC_SPI_LEN);
-            PktIKEAuthPSK pkt = new PktIKEAuthPSK("ike_auth_psk.xml", ispi, rspi, curMsgId,
+            PktIKEAuthPSK pkt = new PktIKEAuthPSK(sulName + "/ike_auth_psk.xml", ispi, rspi, curMsgId,
                     curKeyGen, r_nonce, iInitSaPkt, localaddr, i_child_spi);
             byte[] pktBytes = pkt.getPacketBytes();
             int round = gRetryNum;
@@ -341,7 +348,7 @@ public class IKEv2Client {
             byte[] new_spi = DataUtils.genRandomBytes(IKE_SPI_LEN);
             byte[] new_nc = DataUtils.genRandomBytes(NONCE_LEN);
             byte[] new_ke = tmpKeyG.getPubKey();
-            PktRekeyIkeSa pkt = new PktRekeyIkeSa("cre_cld_sa_rekey_ike_sa.xml", ispi, rspi, curMsgId,
+            PktRekeyIkeSa pkt = new PktRekeyIkeSa(sulName + "/cre_cld_sa_rekey_ike_sa.xml", ispi, rspi, curMsgId,
                     curKeyGen, new_spi, new_nc, new_ke);
             int round=gRetryNum;
             while(round>=0) {
@@ -399,7 +406,7 @@ public class IKEv2Client {
         if(ispi==null || rspi==null ){
             retStr = ERROR;
         }else {
-            PktDelIKESa pkt = new PktDelIKESa("info_del_ike_sa.xml", ispi, rspi, curMsgId, curKeyGen);
+            PktDelIKESa pkt = new PktDelIKESa(sulName + "/info_del_ike_sa.xml", ispi, rspi, curMsgId, curKeyGen);
             int round=gRetryNum;
             while (round>=0) {
                 try {
@@ -443,7 +450,7 @@ public class IKEv2Client {
         if(iOldSpi==null || rOldSpi==null ){
             retStr = ERROR;
         }else {
-            PktDelIKESa pkt = new PktDelIKESa("info_del_ike_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen);
+            PktDelIKESa pkt = new PktDelIKESa(sulName + "/info_del_ike_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen);
             int round=gRetryNum;
             while(round>=0) {
                 try {
@@ -498,7 +505,7 @@ public class IKEv2Client {
             } else {
                 old_c_spi = DataUtils.genRandomBytes(4);
             }
-            PktRekeyChildSa pkt = new PktRekeyChildSa("cre_cld_sa_rekey_cld_sa.xml", ispi, rspi, curMsgId,
+            PktRekeyChildSa pkt = new PktRekeyChildSa(sulName + "/cre_cld_sa_rekey_cld_sa.xml", ispi, rspi, curMsgId,
                     curKeyGen, old_c_spi, new_c_spi, new_nc);
             int round=gRetryNum;
             while(round>=0) {
@@ -554,7 +561,7 @@ public class IKEv2Client {
             } else {
                 old_c_spi = DataUtils.genRandomBytes(4);
             }
-            PktRekeyChildSa pkt = new PktRekeyChildSa("cre_cld_sa_rekey_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId,
+            PktRekeyChildSa pkt = new PktRekeyChildSa(sulName + "/cre_cld_sa_rekey_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId,
                     oldKeyGen, old_c_spi, new_c_spi, new_nc);
             int round=gRetryNum;
             while(round>=0) {
@@ -603,7 +610,7 @@ public class IKEv2Client {
             retStr = ERROR;
         }else {
 
-            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, iChildSpi);
+            PktDelChildSa pkt = new PktDelChildSa(sulName + "/info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, iChildSpi);
             int round=gRetryNum;
             while(round>=0) {
                 try {
@@ -643,7 +650,7 @@ public class IKEv2Client {
             retStr = ERROR;
         }else {
 
-            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, iChildSpi);
+            PktDelChildSa pkt = new PktDelChildSa(sulName + "/info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, iChildSpi);
             int round=gRetryNum;
             while(round>=0) {
                 try {
@@ -683,7 +690,7 @@ public class IKEv2Client {
             retStr = ERROR;
         }else {
 
-            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, iOldChildSpi);
+            PktDelChildSa pkt = new PktDelChildSa(sulName + "/info_del_cld_sa.xml", ispi, rspi, curMsgId, curKeyGen, iOldChildSpi);
             int round=gRetryNum;
             while(round>=0) {
                 try {
@@ -722,7 +729,7 @@ public class IKEv2Client {
         if(iOldSpi==null||rOldSpi==null || iOldChildSpi==null){
             retStr = ERROR;
         }else {
-            PktDelChildSa pkt = new PktDelChildSa("info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, iOldChildSpi);
+            PktDelChildSa pkt = new PktDelChildSa(sulName + "/info_del_cld_sa.xml", iOldSpi, rOldSpi, oldMsgId, oldKeyGen, iOldChildSpi);
             int round=gRetryNum;
             while(round>=0) {
                 try {

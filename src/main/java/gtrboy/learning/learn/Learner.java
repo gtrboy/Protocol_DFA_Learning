@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Random;
 
 public class Learner {
-    private SULMapper<String, String, ConcreteMethodInput, Object> mapper;
+    private final SULMapper<String, String, ConcreteMethodInput, Object> mapper;
     private static final String MODEL_DIR = "learnedModels/";
     private static final int SEED = 18021996;
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
@@ -79,7 +79,7 @@ public class Learner {
         experiment.setLogModels(true);
 
         // Start Experiment
-        String dateStart = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
+        String dateStart = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").format(new Date());
         long st = DataUtils.fromDateStringToLong(dateStart);
         LOGGER.info("Start Time: " + dateStart);
         try {
@@ -87,7 +87,7 @@ public class Learner {
         } catch (Exception e){
             e.printStackTrace();
         }
-        String dateEnd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
+        String dateEnd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").format(new Date());
         long et = DataUtils.fromDateStringToLong(dateEnd);
         LOGGER.info("End Time: " + dateEnd);
         float diffTime = (float) (et - st) / 1000 / 60;

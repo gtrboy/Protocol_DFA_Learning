@@ -180,25 +180,7 @@ abstract class PktIKEEnc extends PktIKE{
         return padLen;
     }
 
-    private byte[] calChecksum(byte[] content){
-        byte[] skAi = keysGenerator.getSkAi();
-        byte[] checksum = null;
-        if(isEnc) {
-            try {
-                byte[] hash = IKEv2KeysGener.getMacDigest(skAi, content, keysGenerator.intgAlg);
-                int checksumLen = hash.length / 2;
-                checksum = new byte[checksumLen];
-                System.arraycopy(hash, 0, checksum, 0, checksumLen);
-            }catch (NoSuchAlgorithmException e){
-                e.printStackTrace();
-            }catch (InvalidKeyException e){
-                e.printStackTrace();
-            }
-        }else{
-            LOGGER.error("Keys are not prepared! ");
-        }
-        return checksum;
-    }
+
 
     private byte[] ParseEncPayload(Element encRoot, byte[] ikeHdr){
         ByteArrayOutputStream bAos = new ByteArrayOutputStream();
@@ -216,7 +198,8 @@ abstract class PktIKEEnc extends PktIKE{
             bAos.writeBytes(ParseEncHdr(pHdr, pData, totalLen));
 
             // IV
-            byte[] ivBytes = DataUtils.hexStrToBytes(initVec.getText());
+            //byte[] ivBytes = DataUtils.hexStrToBytes(initVec.getText());
+            byte[] ivBytes = DataUtils.genRandomBytes(keysGenerator.getIVLen());
             bAos.writeBytes(ivBytes);
 
             // ENC data
@@ -226,7 +209,7 @@ abstract class PktIKEEnc extends PktIKE{
             LOGGER.debug("skEi: " + DataUtils.bytesToHexStr(skEi));
             try {
                 // Encrypt
-                byte[] encBytes = keysGenerator.encrypt(clearBytes, skEi);
+                byte[] encBytes = keysGenerator.encrypt(clearBytes, skEi, ivBytes);
                 bAos.writeBytes(encBytes);
             }catch (Exception e){
                 LOGGER.error("Encrypt Failed! ");
@@ -236,7 +219,7 @@ abstract class PktIKEEnc extends PktIKE{
             // Calculate the integrity checksum
             ByteBuffer buffer = ByteBuffer.allocate(ikeHdr.length + bAos.size());
             buffer.put(ikeHdr).put(bAos.toByteArray());
-            byte[] checksum = calChecksum(buffer.array());
+            byte[] checksum = keysGenerator.calChecksum(buffer.array());
             bAos.writeBytes(checksum);
         }
         else{
