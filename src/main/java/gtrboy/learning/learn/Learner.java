@@ -46,7 +46,8 @@ public class Learner {
         this.mapper = mapper;
     }
 
-    public Experiment.MealyExperiment<String, String> learn(int numSteps, String experimentName, List<String> inputAlphabet) throws IOException {
+    //public Experiment.MealyExperiment<String, String> learn(int numSteps, String experimentName, List<String> inputAlphabet) throws IOException {
+    public void learn(int numSteps, String experimentName, List<String> inputAlphabet) throws IOException {
         double resetProbability = 0.09;
 
         DriverSUL sul = new DriverSUL(mapper);
@@ -119,8 +120,8 @@ public class Learner {
         outputStreamWriter.close();
         LOGGER.info("Model written to " + filepath);
         //LearningUtil.deleteSSTandVizualize(filepath);
-        //Visualization.visualize(result, driver.getInputs());
-        return experiment;
+        Visualization.visualize(result, sul.getAlphabet());
+        //return experiment;
     }
 
 }
