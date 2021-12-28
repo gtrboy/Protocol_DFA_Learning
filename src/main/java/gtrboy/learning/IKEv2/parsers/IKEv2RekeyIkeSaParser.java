@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
-public class IKEv2RekeyIkeSaParser extends IKEv2EncParser {
+public class IKEv2RekeyIkeSaParser extends IKEv2Parser {
 
     IKEv2KeysGener curKeyG;
     byte[] r_nonce = null;

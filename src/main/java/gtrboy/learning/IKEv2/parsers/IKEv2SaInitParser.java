@@ -14,7 +14,7 @@ public class IKEv2SaInitParser extends IKEv2Parser {
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2SaInitParser(DatagramPacket pkt){
-        super(pkt);
+        super(pkt, null);
     }
 
     @Override

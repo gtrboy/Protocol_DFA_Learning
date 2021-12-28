@@ -3,19 +3,15 @@ package gtrboy.learning.IKEv2;
 import gtrboy.learning.IKEv2.messages.*;
 import gtrboy.learning.IKEv2.parsers.*;
 import gtrboy.learning.utils.DataUtils;
-//import gtrboy.learning.utils.LogUtils;
-
-import java.io.IOException;
-import java.net.*;
-
 import gtrboy.learning.utils.TelnetMain;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.net.*;
 
 
-
-public class IKEv2Client {
+public class IKEv2Client_bak {
 
     //private final IKEv2Config clientConf;
     private final int g_RetryNum;
@@ -63,7 +59,7 @@ public class IKEv2Client {
 
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
-    public IKEv2Client(IKEv2Config config) {
+    public IKEv2Client_bak(IKEv2Config config) {
         String telnetUserName;
         String telnetPassword;
 

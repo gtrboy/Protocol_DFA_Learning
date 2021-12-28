@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
-public class IKEv2AuthParser extends IKEv2EncParser {
+public class IKEv2AuthParser extends IKEv2Parser {
     IKEv2KeysGener keyG = null;
     byte[] rChildSpi = null;
     //byte[] peerIV = null;

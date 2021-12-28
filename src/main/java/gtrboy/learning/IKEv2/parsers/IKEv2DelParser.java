@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
-public class IKEv2DelParser extends IKEv2EncParser{
+public class IKEv2DelParser extends IKEv2Parser{
 
     //boolean isCurrent;
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);

@@ -1,8 +1,11 @@
 package gtrboy.learning.IKEv2.parsers;
 
+import gtrboy.learning.IKEv2.IKEv2Exception;
+import gtrboy.learning.IKEv2.IKEv2KeysGener;
 import gtrboy.learning.IKEv2.messages.PktIKEInitSA;
 import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.commons.net.tftp.TFTPPacket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,15 +13,15 @@ import java.net.*;
 import java.util.HashMap;
 
 
-public class IKEv2Parser {
+public abstract class IKEv2Parser {
     public byte eType;
     protected byte[] pb;
     //protected int pLen;
     protected byte nPld;
     protected int offset = 0;
 
-    private byte[] initSPI;
-    private byte[] respSPI;
+    private final byte[] initSPI;
+    private final byte[] respSPI;
 
     private int totalLen = 0;
     // private int remainedLen = 0;
@@ -26,33 +29,13 @@ public class IKEv2Parser {
     protected short notifyType = 0;
     protected byte[] notifyData = null;
 
+    protected IKEv2KeysGener keyG;
+
     protected static final int NOTIFY_ERROR_MAX = 16383;
+    private static final int MIN_PACKET_SIZE = 28;
 
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
-    /*
-    public @interface NotifyType {}
-    public static final int UNSUPPORTED_CRITICAL_PAYLOAD = 1;
-    public static final int INVALID_IKE_SPI = 4;
-    public static final int INVALID_MAJOR_VERSION = 5;
-    public static final int INVALID_SYNTAX = 7;
-    public static final int INVALID_MESSAGE_ID = 9;
-    public static final int INVALID_SPI = 11;
-    public static final int NO_PROPOSAL_CHOSEN = 14;
-    public static final int INVALID_KE_PAYLOAD = 17;
-    public static final int AUTHENTICATION_FAILED = 24;
-    public static final int SINGLE_PAIR_REQUIRED = 34;
-    public static final int NO_ADDITIONAL_SAS = 35;
-    public static final int INTERNAL_ADDRESS_FAILURE = 36;
-    public static final int FAILED_CP_REQUIRED = 37;
-    public static final int TS_UNACCEPTABLE = 38;
-    public static final int INVALID_SELECTORS = 39;
-    public static final int TEMPORARY_FAILURE = 43;
-    public static final int CHILD_SA_NOT_FOUND = 44;
-    public static final int NAT_DETECTION_SOURCE_IP = 16388;
-    public static final int NAT_DETECTION_DESTINATION_IP = 16389;
-    public static final int REKEY_SA = 16393;
-     */
 
     public static final HashMap<Integer, String> NOTIFY_TYPES = new HashMap<Integer, String>(){{
         put(1, "UNSUPPORTED_CRITICAL_PAYLOAD");
@@ -78,17 +61,31 @@ public class IKEv2Parser {
     }};
 
 
-    public IKEv2Parser(DatagramPacket pkt){
+    public IKEv2Parser(DatagramPacket pkt, IKEv2KeysGener keysGener){
         initSPI = new byte[8];
         respSPI = new byte[8];
+        keyG = keysGener;
         pb = pkt.getData();
         //pLen = pkt.getLength();
         parseIKEv2Hdr();
     }
 
-    public String parsePacket() {
-        return null;
+    public static final IKEv2Parser newIKEv2Parser(DatagramPacket datagram) throws IKEv2Exception {
+        byte[] data;
+        IKEv2Parser packet = null;
+
+        if(datagram.getLength() < MIN_PACKET_SIZE){
+            throw new IKEv2Exception("Bad packet. Datagram data length is too short.");
+        }
+
+        data = datagram.getData();
+        byte excgType = data[18];
+
+        switch ()
     }
+
+
+    public abstract String parsePacket();
 
 
     protected void parseIKEv2Hdr(){
@@ -111,8 +108,6 @@ public class IKEv2Parser {
         return null;
     }
 
-
-
     protected void parseDefault(){
         int pLen = parsePayloadHdr();
         AO(pLen - 4);
@@ -131,8 +126,6 @@ public class IKEv2Parser {
 
     }
 
-
-
     protected int parsePayloadHdr(){
         //byte[] pHdr = new byte[4];
         short pLen;
@@ -146,5 +139,37 @@ public class IKEv2Parser {
         int oldOffset = offset;
         offset += v;
         return oldOffset;
+    }
+
+    protected void parseEncPayload() throws Exception {
+        byte[] decData;
+        int payLen = parsePayloadHdr();
+        //LOGGER.debug("Enc Payload Length: " + payLen);
+        // Initialization Vector
+        byte[] peerIV = parseIV();
+        //LOGGER.debug("IV: " + DataUtils.bytesToHexStr(peerIV));
+        int ivLen = peerIV.length;
+        int checksumLen = keyG.getChecksumLen();
+        int encDataLen = payLen - ivLen - checksumLen - 4;
+        //LOGGER.debug("encDataLen: " + encDataLen);
+
+        decData = parseDecData(encDataLen, peerIV);
+        LOGGER.debug("Dec Data: " + DataUtils.bytesToHexStr(decData));
+        //LOGGER.debug("DECDATA: "+DataUtils.bytesToHexStr(decData));
+        pb = decData;
+        offset = 0;
+    }
+
+    private byte[] parseIV(){
+        int ivLen = keyG.getIVLen();
+        byte[] iv = new byte[ivLen];
+        System.arraycopy(pb, AO(ivLen), iv, 0, ivLen);
+        return iv;
+    }
+
+    private byte[] parseDecData(int dataLen, byte[] iv) throws Exception {
+        byte[] encData = new byte[dataLen];
+        System.arraycopy(pb, AO(dataLen), encData, 0, dataLen);
+        return keyG.decrypt(encData, keyG.getSkEr(), iv);
     }
 }

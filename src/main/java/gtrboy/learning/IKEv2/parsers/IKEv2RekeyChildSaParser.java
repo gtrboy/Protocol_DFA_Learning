@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
-public class IKEv2RekeyChildSaParser extends IKEv2EncParser{
+public class IKEv2RekeyChildSaParser extends IKEv2Parser{
 
     byte[] r_nonce = null;
     byte[] r_child_spi = null;
