@@ -459,9 +459,6 @@ public class IKEv2KeysGener {
         byte[] macedIDForIBuf;
         byte[] authData = null;
         String prfFunc = _hmacAlg;
-        LOGGER.info("HMAC ALGO: " + _hmacAlg);
-        LOGGER.info("skPi: " + DataUtils.bytesToHexStr(skPi));
-        LOGGER.info("psk: " + _psk);
         ByteBuffer initSignedOctetsBuf = ByteBuffer.allocate(iInitSaPkt.length + rNonce.length + macLen);
         try{
             macedIDForIBuf = getMacDigest(skPi, initIDPayload, prfFunc);
