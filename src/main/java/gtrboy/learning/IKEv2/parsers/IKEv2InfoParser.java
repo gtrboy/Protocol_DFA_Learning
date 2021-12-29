@@ -1,19 +1,18 @@
 package gtrboy.learning.IKEv2.parsers;
 
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
-import gtrboy.learning.utils.LogUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 
-public class IKEv2DelParser extends IKEv2Parser{
+public class IKEv2InfoParser extends IKEv2Parser{
 
     //boolean isCurrent;
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
-    public IKEv2DelParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
-        super(pkt, keysGener);
+    public IKEv2InfoParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
+        super(IKEv2Parser.INFO, pkt, keysGener);
         //isCurrent = old_or_cur;
     }
 
@@ -22,6 +21,7 @@ public class IKEv2DelParser extends IKEv2Parser{
         String retStr = null;
         boolean isDel = false;
         boolean isEmpty = false;
+        boolean isNotify = false;
 
         while(nPld!=0){
             switch (nPld){
@@ -42,6 +42,7 @@ public class IKEv2DelParser extends IKEv2Parser{
                     break;
                 case 0x29:
                     parseNotifyPayload();
+                    isNotify = true;
                     break;
                 default:
                     parseDefault();
@@ -49,18 +50,20 @@ public class IKEv2DelParser extends IKEv2Parser{
         }
 
         if(notifyType <= NOTIFY_ERROR_MAX && notifyType != 0){
-            retStr = NOTIFY_TYPES.get(Integer.valueOf(notifyType));
-            //LogUtils.logDebug(this.getClass().getName(), "Notify Type: " + notifyType);
+            retStr = NOTIFY_TYPES.get((int) notifyType);
+            LOGGER.debug("Notify Type: " + retStr);
             if(retStr==null){
                 LOGGER.error("Unknown Notify Type! ");
                 System.exit(-1);
             }
+        }else if (isNotify){
+            retStr = "NOTIFY_" + String.valueOf(notifyType);
         } else if(isDel){
-            retStr = "OK";
+            retStr = "OK_DEL";
         }else if(isEmpty){
             retStr = "EmptyInfo";
         }else{
-            LOGGER.error("Receive wrong Del packet! ");
+            LOGGER.error("Receive wrong INFORMATION packet! ");
             System.exit(-1);
         }
         return retStr;

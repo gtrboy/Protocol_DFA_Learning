@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 
 
-public class IKEv2Client {
+public class IKEv2Client extends IKEv2{
 
     //private final IKEv2Config clientConf;
     private final int g_RetryNum;
@@ -49,7 +49,7 @@ public class IKEv2Client {
     private byte[] g_rOldChildSpi;
     private int g_curMsgId = 0;
     private int g_oldMsgId = 0;
-    private int g_wantedMsgId = 0;
+
     private DatagramSocket _sock_;
     private IKEv2KeysGener g_curKeyGen;
     private IKEv2KeysGener g_oldKeyGen;
@@ -115,23 +115,7 @@ public class IKEv2Client {
         }
     }
 
-    private boolean validatePkt(DatagramPacket packet){
-        boolean ret;
-        byte[] bPkt = packet.getData();
-        byte exchType = bPkt[18];
-        byte flags = bPkt[19];
-        int msgId = DataUtils.bytesToIntB(bPkt, 20);
-        LOGGER.debug("Msg Id: " + msgId);
-        // discard cmd del information packet or init request packet
-        if((exchType==0x25 && flags==0x00) || flags==0x08){
-            ret = false;
-        }else if(msgId!= g_wantedMsgId) {
-            ret = false;
-        }else {
-            ret = true;
-        }
-        return ret;
-    }
+
 
     private DatagramPacket receive() throws IOException {
         byte[] buffer = new byte[1024];
@@ -184,16 +168,15 @@ public class IKEv2Client {
                 LOGGER.error("Invalid SUL Name! ");
                 System.exit(-1);
         }
-        
-        _sock_.disconnect();
-        _sock_.close();
-        _sock_ = null;
+
+        // Close the socket.
+        close();
     }
 
     public void InitSocket() {
         try{
-            _sock_ = new DatagramSocket(500);
-            _sock_.setSoTimeout((int) (g_Timeout *1000));
+            // Open the socket.
+            open(g_port);
         } catch (SocketException e){
             LOGGER.error("UDP socket init error! ");
             e.printStackTrace();
@@ -219,39 +202,50 @@ public class IKEv2Client {
 
 
     /*************  Packets  **************/
+
     public String saInitWithAcceptedSa(){
         String retStr = null;
         prepareInitSa();
         PktIKEInitSA pkt = new PktIKEInitSA(g_sulName + "/ike_init_sa_acc_sa.xml", g_iSpi, g_rSpi, g_curMsgId, g_iKe, g_iNnonce);
         byte[] pktBytes = pkt.getPacketBytes();
 
+        beginBufferedOps();
         int round = g_RetryNum;
         while(round>=0){
             try{
-                send(pktBytes);
+                //send(pktBytes);
+                bufferedSend(pktBytes, g_peerAddr, g_port);
                 g_wantedMsgId = g_curMsgId;
-            } catch (IOException e){
+            } catch (IOException e) {
                 LOGGER.error("Send UDP packet Error!");
                 e.printStackTrace();
             }
-
             try {
-                DatagramPacket rPkt =  receive();
-                IKEv2SaInitParser parser = new IKEv2SaInitParser(rPkt);
-                retStr = parser.parsePacket();
-
-                //if("RESP_IKE_INIT_SA".equals(retstr)){
-                if("OK".equals(retStr)){
-                    // For Authentication, store the INIT_SA packet first.
-                    g_iInitSaPkt = pktBytes;
-                    g_rSpi = parser.getRespSPI();
-                    g_rKe = parser.getPubKey();
-                    g_rNonce = parser.getNonce();
-                    g_curKeyGen.genKeys(g_iSpi, g_rSpi, g_iNnonce, g_rNonce, g_rKe);
-                    LOGGER.debug("ispi: " + DataUtils.bytesToHexStr(g_iSpi));
-                    LOGGER.debug("rspi: " + DataUtils.bytesToHexStr(g_rSpi));
-                    LOGGER.debug("r_ke: " + DataUtils.bytesToHexStr(g_rKe));
-                    LOGGER.debug("r_nonce: " + DataUtils.bytesToHexStr(g_rNonce));
+                IKEv2Parser parser= bufferedReceive(null);
+                switch (parser.getType()){
+                    case IKEv2Parser.INIT:
+                        IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                        retStr = initParser.parsePacket();
+                        if("OK".equals(retStr)){
+                            // For Authentication, store the INIT_SA packet first.
+                            g_iInitSaPkt = initParser.getPktBytes();
+                            g_rSpi = initParser.getRespSPI();
+                            g_rKe = initParser.getPubKey();
+                            g_rNonce = initParser.getNonce();
+                            g_curKeyGen.genKeys(g_iSpi, g_rSpi, g_iNnonce, g_rNonce, g_rKe);
+                            LOGGER.debug("ispi: " + DataUtils.bytesToHexStr(g_iSpi));
+                            LOGGER.debug("rspi: " + DataUtils.bytesToHexStr(g_rSpi));
+                            LOGGER.debug("r_ke: " + DataUtils.bytesToHexStr(g_rKe));
+                            LOGGER.debug("r_nonce: " + DataUtils.bytesToHexStr(g_rNonce));
+                        }
+                        break;
+                    case IKEv2Parser.INFO:
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        break;
+                    default:
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
                 }
                 addMsgId(true);
                 break;
@@ -264,6 +258,7 @@ public class IKEv2Client {
                 e.printStackTrace();
             }
         }
+        endBufferedOps();
 
         LOGGER.info("saInitWithAcceptedSA, RET: " + retStr);
         return retStr;
@@ -278,26 +273,38 @@ public class IKEv2Client {
             PktIKEAuthPSK pkt = new PktIKEAuthPSK(g_sulName + "/ike_auth_psk.xml", g_iSpi, g_rSpi, g_curMsgId,
                     g_curKeyGen, g_rNonce, g_iInitSaPkt, g_localAddr, i_child_spi);
             byte[] pktBytes = pkt.getPacketBytes();
+
+            beginBufferedOps();
             int round = g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
                     g_wantedMsgId = g_curMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error!");
                     e.printStackTrace();
                 }
+
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2AuthParser parser = new IKEv2AuthParser(rPkt, g_curKeyGen);
-                    retStr = parser.parsePacket();
-                    //if("RESP_IKE_AUTH".equals(retStr)) {
-                    if ("OK".equals(retStr)) {
-                        g_iChildSpi = i_child_spi;
-                        g_rChildSpi = parser.getRChildSpi();
-                        //LOGGER.debug("Response child SPI: " + DataUtils.bytesToHexStr(rChildSpi));
-                    } else {
-                        g_iChildSpi = null;
+                    IKEv2Parser parser = bufferedReceive(g_curKeyGen);
+                    switch (parser.getType()){
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            if ("OK".equals(retStr)) {
+                                g_iChildSpi = i_child_spi;
+                                g_rChildSpi = authParser.getRChildSpi();
+                            } else {
+                                g_iChildSpi = null;
+                            }
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
                     }
                     addMsgId(true);
                     break;
@@ -309,8 +316,9 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
-
+            endBufferedOps();
         }
+
         LOGGER.info("authWithPsk, RET: " + retStr);
         return retStr;
     }
@@ -328,10 +336,12 @@ public class IKEv2Client {
             byte[] new_ke = tmpKeyG.getPubKey();
             PktRekeyIkeSa pkt = new PktRekeyIkeSa(g_sulName + "/cre_cld_sa_rekey_ike_sa.xml", g_iSpi, g_rSpi, g_curMsgId,
                     g_curKeyGen, new_spi, new_nc, new_ke);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_curMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -339,31 +349,42 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2RekeyIkeSaParser parser = new IKEv2RekeyIkeSaParser(rPkt, g_curKeyGen);
-                    retStr = parser.parsePacket();
-                    //if(retStr.equals("RESP_REKEY_IKE_SA")){
-                    if (retStr.equals("OK")) {
-                        g_iOldSpi = g_iSpi;
-                        g_iSpi = new_spi;
-                        g_rOldSpi = g_rSpi;
-                        g_rSpi = parser.getRSpi();
-                        old_i_nonce = g_iNnonce;
-                        g_iNnonce = new_nc;
-                        old_r_nonce = g_rNonce;
-                        g_rNonce = parser.getNonce();
-                        //oldKeyGen = curKeyGen;
-                        tmpKeyG.reGenKeys(g_curKeyGen.getSkD(), new_spi, parser.getRSpi(), new_nc, parser.getNonce(), parser.getKe());
-                        //tmpNewKeyGen = tmpKeyG;
-                        g_oldKeyGen = g_curKeyGen;
-                        g_curKeyGen = tmpKeyG;
-                        g_oldMsgId = g_curMsgId + 1;
-                        resetMsgId(0, true);
-                        //resetMsgId(0);
-                        LOGGER.debug("new iSPI: " + DataUtils.bytesToHexStr(g_iSpi));
-                        LOGGER.debug("new rSPI: " + DataUtils.bytesToHexStr(g_rSpi));
-                    } else {
-                        addMsgId(true);
+                    IKEv2Parser parser = bufferedReceive(g_curKeyGen);
+                    switch (parser.getType()){
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            if (retStr.equals("OK_IKE")) {
+                                g_iOldSpi = g_iSpi;
+                                g_iSpi = new_spi;
+                                g_rOldSpi = g_rSpi;
+                                g_rSpi = ccsaParser.getRSpi();
+                                old_i_nonce = g_iNnonce;
+                                g_iNnonce = new_nc;
+                                old_r_nonce = g_rNonce;
+                                g_rNonce = ccsaParser.getRNonce();
+                                //oldKeyGen = curKeyGen;
+                                tmpKeyG.reGenKeys(g_curKeyGen.getSkD(), new_spi, ccsaParser.getRSpi(), new_nc, ccsaParser.getRNonce(), ccsaParser.getKe());
+                                //tmpNewKeyGen = tmpKeyG;
+                                g_oldKeyGen = g_curKeyGen;
+                                g_curKeyGen = tmpKeyG;
+                                g_oldMsgId = g_curMsgId + 1;
+                                resetMsgId(0, true);
+                                retStr = "OK";
+                                LOGGER.debug("new iSPI: " + DataUtils.bytesToHexStr(g_iSpi));
+                                LOGGER.debug("new rSPI: " + DataUtils.bytesToHexStr(g_rSpi));
+                            } else {
+                                addMsgId(true);
+                            }
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            addMsgId(true);
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
                     }
                     break;
                 } catch (SocketTimeoutException e) {
@@ -374,6 +395,7 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
+            endBufferedOps();
         }
         LOGGER.info("rekeyIKESA, RET: " + retStr);
         return retStr;
@@ -385,10 +407,12 @@ public class IKEv2Client {
             retStr = ERROR;
         }else {
             PktDelIKESa pkt = new PktDelIKESa(g_sulName + "/info_del_ike_sa.xml", g_iSpi, g_rSpi, g_curMsgId, g_curKeyGen);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while (round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_curMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -396,16 +420,22 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2DelParser parser = new IKEv2DelParser(rPkt, g_curKeyGen);
-                    retStr = parser.parsePacket();
-                    if ("OK".equals(retStr)) {
-                        resetMsgId(0, true);
-                        g_iSpi = null;
-                        g_rSpi = null;
-                        g_curKeyGen = null;
+                    IKEv2Parser parser = bufferedReceive(g_curKeyGen);
+                    if (parser.getType() == IKEv2Parser.INFO) {
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        if ("OK_DEL".equals(retStr)) {
+                            resetMsgId(0, true);
+                            g_iSpi = null;
+                            g_rSpi = null;
+                            g_curKeyGen = null;
+                            retStr = "OK";
+                        } else {
+                            addMsgId(true);
+                        }
                     } else {
-                        addMsgId(true);
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
                     }
                     break;
                 } catch (SocketTimeoutException e) {
@@ -416,9 +446,9 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
-            //addMsgId();
-            //resetMsgId(0);
+            endBufferedOps();
         }
+
         LOGGER.info("delCurIKESA, RET: " + retStr);
         return retStr;
     }
@@ -429,10 +459,12 @@ public class IKEv2Client {
             retStr = ERROR;
         }else {
             PktDelIKESa pkt = new PktDelIKESa(g_sulName + "/info_del_ike_sa.xml", g_iOldSpi, g_rOldSpi, g_oldMsgId, g_oldKeyGen);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_oldMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -440,17 +472,22 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2DelParser parser = new IKEv2DelParser(rPkt, g_oldKeyGen);
-                    retStr = parser.parsePacket();
-                    //if("RESP_INFO_DEL_IKE_SA".equals(retStr)){
-                    if ("OK".equals(retStr)) {
-                        resetMsgId(0, false);
-                        g_iOldSpi = null;
-                        g_rOldSpi = null;
-                        g_oldKeyGen = null;
+                    IKEv2Parser parser = bufferedReceive(g_oldKeyGen);
+                    if (parser.getType() == IKEv2Parser.INFO) {
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        if ("OK_DEL".equals(retStr)) {
+                            g_iOldSpi = null;
+                            g_rOldSpi = null;
+                            g_oldKeyGen = null;
+                            retStr = "OK";
+                            resetMsgId(0, false);
+                        } else {
+                            addMsgId(false);
+                        }
                     } else {
-                        addMsgId(false);
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
                     }
                     break;
                 } catch (SocketTimeoutException e) {
@@ -461,8 +498,7 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
-            //addMsgId();
-            //resetMsgId(0);
+            endBufferedOps();
         }
         LOGGER.info("delOldIKESA, RET: " + retStr);
         return retStr;
@@ -475,7 +511,7 @@ public class IKEv2Client {
         if(g_iSpi ==null || g_rSpi ==null || g_iChildSpi ==null){
             retStr = ERROR;
         }else {
-            byte[] old_c_spi = null;
+            byte[] old_c_spi;
             byte[] new_c_spi = DataUtils.genRandomBytes(IPSEC_SPI_LEN);
             byte[] new_nc = DataUtils.genRandomBytes(NONCE_LEN);
             if (g_iChildSpi != null) {
@@ -485,10 +521,12 @@ public class IKEv2Client {
             }
             PktRekeyChildSa pkt = new PktRekeyChildSa(g_sulName + "/cre_cld_sa_rekey_cld_sa.xml", g_iSpi, g_rSpi, g_curMsgId,
                     g_curKeyGen, old_c_spi, new_c_spi, new_nc);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_curMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -496,19 +534,27 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2RekeyChildSaParser parser = new IKEv2RekeyChildSaParser(rPkt, g_curKeyGen);
-                    retStr = parser.parsePacket();
-                    //if(retStr.equals("RESP_REKEY_Child_SA")){
-                    if (retStr.equals("OK")) {
-                        g_iOldChildSpi = g_iChildSpi;
-                        g_iChildSpi = new_c_spi;
-                        g_rOldChildSpi = g_rChildSpi;
-                        g_rChildSpi = parser.getRChildSpi();
-                        //old_i_nonce = i_nonce;
-                        //i_nonce = new_nc;
-                        //old_r_nonce = r_nonce;
-                        //r_nonce = parser.getRNonce();
+                    IKEv2Parser parser = bufferedReceive(g_curKeyGen);
+                    switch (parser.getType()){
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            if (retStr.equals("OK_ESP")) {
+                                g_iOldChildSpi = g_iChildSpi;
+                                g_iChildSpi = new_c_spi;
+                                g_rOldChildSpi = g_rChildSpi;
+                                g_rChildSpi = ccsaParser.getRChildSpi();
+                                retStr = "OK";
+                            }
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            addMsgId(true);
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
                     }
                     addMsgId(true);
                     break;
@@ -520,7 +566,7 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
-
+            endBufferedOps();
         }
         LOGGER.info("rekeyChildSaWithCurIkeSa, RET: " + retStr);
         return retStr;
@@ -531,7 +577,7 @@ public class IKEv2Client {
         if(g_iOldSpi ==null || g_rOldSpi ==null || g_iChildSpi ==null){
             retStr = ERROR;
         }else {
-            byte[] old_c_spi = null;
+            byte[] old_c_spi;
             byte[] new_c_spi = DataUtils.genRandomBytes(IPSEC_SPI_LEN);
             byte[] new_nc = DataUtils.genRandomBytes(NONCE_LEN);
             if (g_iChildSpi != null) {
@@ -541,10 +587,12 @@ public class IKEv2Client {
             }
             PktRekeyChildSa pkt = new PktRekeyChildSa(g_sulName + "/cre_cld_sa_rekey_cld_sa.xml", g_iOldSpi, g_rOldSpi, g_oldMsgId,
                     g_oldKeyGen, old_c_spi, new_c_spi, new_nc);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_oldMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -552,19 +600,27 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2RekeyChildSaParser parser = new IKEv2RekeyChildSaParser(rPkt, g_oldKeyGen);
-                    retStr = parser.parsePacket();
-                    //if(retStr.equals("RESP_REKEY_Child_SA")){
-                    if (retStr.equals("OK")) {
-                        g_iOldChildSpi = g_iChildSpi;
-                        g_iChildSpi = new_c_spi;
-                        g_rOldChildSpi = g_rChildSpi;
-                        g_rChildSpi = parser.getRChildSpi();
-                        //old_i_nonce = i_nonce;
-                        //i_nonce = new_nc;
-                        //old_r_nonce = r_nonce;
-                        //r_nonce = parser.getRNonce();
+                    IKEv2Parser parser = bufferedReceive(g_oldKeyGen);
+                    switch (parser.getType()){
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            if (retStr.equals("OK_ESP")) {
+                                g_iOldChildSpi = g_iChildSpi;
+                                g_iChildSpi = new_c_spi;
+                                g_rOldChildSpi = g_rChildSpi;
+                                g_rChildSpi = ccsaParser.getRChildSpi();
+                                retStr = "OK";
+                            }
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            addMsgId(true);
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
                     }
                     addMsgId(false);
                     break;
@@ -576,7 +632,7 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
-
+            endBufferedOps();
         }
         LOGGER.info("rekeyChildSaWithOldIkeSa, RET: " + retStr);
         return retStr;
@@ -587,12 +643,13 @@ public class IKEv2Client {
         if(g_iSpi ==null || g_rSpi ==null || g_iChildSpi ==null){
             retStr = ERROR;
         }else {
-
             PktDelChildSa pkt = new PktDelChildSa(g_sulName + "/info_del_cld_sa.xml", g_iSpi, g_rSpi, g_curMsgId, g_curKeyGen, g_iChildSpi);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_curMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -600,12 +657,18 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2DelParser parser = new IKEv2DelParser(rPkt, g_curKeyGen);
-                    retStr = parser.parsePacket();
-                    if ("OK".equals(retStr)) {
-                        g_iChildSpi = null;
-                        g_rChildSpi = null;
+                    IKEv2Parser parser = bufferedReceive(g_curKeyGen);
+                    if(parser.getType() == IKEv2Parser.INFO) {
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        if ("OK_DEL".equals(retStr)) {
+                            g_iChildSpi = null;
+                            g_rChildSpi = null;
+                            retStr = "OK";
+                        }
+                    }else{
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
                     }
                     addMsgId(true);
                     break;
@@ -617,6 +680,7 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
+            endBufferedOps();
         }
         LOGGER.info("delCurChildSaWithCurIkeSa, RET: " + retStr);
         return retStr;
@@ -629,10 +693,12 @@ public class IKEv2Client {
         }else {
 
             PktDelChildSa pkt = new PktDelChildSa(g_sulName + "/info_del_cld_sa.xml", g_iOldSpi, g_rOldSpi, g_oldMsgId, g_oldKeyGen, g_iChildSpi);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_oldMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -640,12 +706,18 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2DelParser parser = new IKEv2DelParser(rPkt, g_oldKeyGen);
-                    retStr = parser.parsePacket();
-                    if ("OK".equals(retStr)) {
-                        g_iChildSpi = null;
-                        g_rChildSpi = null;
+                    IKEv2Parser parser = bufferedReceive(g_oldKeyGen);
+                    if(parser.getType()==IKEv2Parser.INFO) {
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        if ("OK_DEL".equals(retStr)) {
+                            g_iChildSpi = null;
+                            g_rChildSpi = null;
+                            retStr = "OK";
+                        }
+                    }else{
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
                     }
                     addMsgId(false);
                     break;
@@ -657,6 +729,7 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
+            endBufferedOps();
         }
         LOGGER.info("delCurChildSaWithOldIkeSa, RET: " + retStr);
         return retStr;
@@ -669,10 +742,12 @@ public class IKEv2Client {
         }else {
 
             PktDelChildSa pkt = new PktDelChildSa(g_sulName + "/info_del_cld_sa.xml", g_iSpi, g_rSpi, g_curMsgId, g_curKeyGen, g_iOldChildSpi);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_curMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -680,12 +755,18 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2DelParser parser = new IKEv2DelParser(rPkt, g_curKeyGen);
-                    retStr = parser.parsePacket();
-                    if ("OK".equals(retStr)) {
-                        g_iOldChildSpi = null;
-                        g_rOldChildSpi = null;
+                    IKEv2Parser parser = bufferedReceive(g_curKeyGen);
+                    if(parser.getType()==IKEv2Parser.INFO) {
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        if ("OK_DEL".equals(retStr)) {
+                            g_iOldChildSpi = null;
+                            g_rOldChildSpi = null;
+                            retStr = "OK";
+                        }
+                    }else{
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
                     }
                     addMsgId(true);
                     break;
@@ -697,6 +778,7 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
+            endBufferedOps();
         }
         LOGGER.info("delOldChildSaWithCurIkeSa, RET: " + retStr);
         return retStr;
@@ -708,10 +790,12 @@ public class IKEv2Client {
             retStr = ERROR;
         }else {
             PktDelChildSa pkt = new PktDelChildSa(g_sulName + "/info_del_cld_sa.xml", g_iOldSpi, g_rOldSpi, g_oldMsgId, g_oldKeyGen, g_iOldChildSpi);
+
+            beginBufferedOps();
             int round= g_RetryNum;
             while(round>=0) {
                 try {
-                    send(pkt.getPacketBytes());
+                    bufferedSend(pkt.getPacketBytes(), g_peerAddr, g_port);
                     g_wantedMsgId = g_oldMsgId;
                 } catch (IOException e) {
                     LOGGER.error("Send UDP packet Error! ");
@@ -719,12 +803,18 @@ public class IKEv2Client {
                 }
 
                 try {
-                    DatagramPacket rPkt = receive();
-                    IKEv2DelParser parser = new IKEv2DelParser(rPkt, g_oldKeyGen);
-                    retStr = parser.parsePacket();
-                    if ("OK".equals(retStr)) {
-                        g_iOldChildSpi = null;
-                        g_rOldChildSpi = null;
+                    IKEv2Parser parser = bufferedReceive(g_oldKeyGen);
+                    if(parser.getType()==IKEv2Parser.INFO) {
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        if ("OK_DEL".equals(retStr)) {
+                            g_iOldChildSpi = null;
+                            g_rOldChildSpi = null;
+                            retStr = "OK";
+                        }
+                    }else{
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
                     }
                     addMsgId(false);
                     break;
@@ -736,6 +826,7 @@ public class IKEv2Client {
                     e.printStackTrace();
                 }
             }
+            endBufferedOps();
         }
         LOGGER.info("delOldChildSaWithOldIkeSa, RET: " + retStr);
         return retStr;

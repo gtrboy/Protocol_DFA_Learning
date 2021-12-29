@@ -106,16 +106,18 @@ public class TestMain {
         //logger.debug("ret: " + ret);
 
         ret = client.authWithPsk();
-        logger.debug("ret: " + ret);
+        //logger.debug("ret: " + ret);
 
-        //ret = client.rekeyIkeSa();
+        ret = client.rekeyIkeSa();
         //System.out.println("ret: " + ret);
 
-        //ret = client.delOldIkeSa();
+        ret = client.delOldIkeSa();
         //System.out.println("ret: " + ret);
 
-        //ret = client.delCurIkeSa();
+        ret = client.delCurIkeSa();
         //System.out.println("ret: " + ret);
+
+        client.reset();
 
         //ret = client.authWithPsk();
         //System.out.println("ret: " + ret);

@@ -17,7 +17,7 @@ public class IKEv2AuthParser extends IKEv2Parser {
 
 
     public IKEv2AuthParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
-        super(pkt, keysGener);
+        super(IKEv2Parser.AUTH, pkt, keysGener);
         keyG = keysGener;
     }
 
@@ -69,8 +69,8 @@ public class IKEv2AuthParser extends IKEv2Parser {
 
         boolean isNormal = isSA && isAuth && isIDr && isTSi && isTSr;
         if(notifyType <= NOTIFY_ERROR_MAX && notifyType != 0){  // Error Notify
-            retStr = NOTIFY_TYPES.get(Integer.valueOf((int)notifyType));
-            //LogUtils.logDebug(this.getClass().getName(), "Notify Type: " + notifyType);
+            retStr = NOTIFY_TYPES.get((int) notifyType);
+            LOGGER.debug("Notify Type: " + retStr);
             if(retStr == null){
                 LOGGER.error("Unknown Notify Type! ");
                 System.exit(-1);

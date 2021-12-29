@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 
 import gtrboy.learning.IKEv2.parsers.IKEv2Parser;
+import gtrboy.learning.utils.DataUtils;
 import org.apache.commons.net.DatagramSocketClient;
 import org.apache.commons.net.tftp.TFTPPacket;
 import org.apache.commons.net.tftp.TFTPPacketException;
@@ -40,6 +41,8 @@ public class IKEv2 extends DatagramSocketClient {
      */
     byte[] sendBuffer;
 
+    protected int g_wantedMsgId = 0;
+
     public IKEv2()
     {
         setDefaultTimeout(DEFAULT_TIMEOUT);
@@ -65,15 +68,34 @@ public class IKEv2 extends DatagramSocketClient {
                 new DatagramPacket(sendBuffer, sendBuffer.length);
     }
 
-    public final IKEv2Parser bufferedReceive() throws IOException,
-            InterruptedIOException, SocketException, TFTPPacketException
-    {
+    boolean validatePkt(DatagramPacket packet){
+        boolean ret;
+        byte[] bPkt = packet.getData();
+        byte exchType = bPkt[18];
+        byte flags = bPkt[19];
+        int msgId = DataUtils.bytesToIntB(bPkt, 20);
+        //LOGGER.debug("Msg Id: " + msgId);
+        // discard cmd del information packet or init request packet
+        if((exchType==0x25 && flags==0x00) || flags==0x08){
+            ret = false;
+        }else if(msgId!= g_wantedMsgId) {
+            ret = false;
+        }else {
+            ret = true;
+        }
+        return ret;
+    }
+
+    public final IKEv2Parser bufferedReceive(IKEv2KeysGener keysGener) throws IOException {
         receiveDatagram.setData(receiveBuffer);
         receiveDatagram.setLength(receiveBuffer.length);
-        _socket_.receive(receiveDatagram);
-
-        final TFTPPacket newTFTPPacket = TFTPPacket.newTFTPPacket(receiveDatagram);
-        return newTFTPPacket;
+        while(true) {
+            _socket_.receive(receiveDatagram);
+            if(validatePkt(receiveDatagram)){
+                break;
+            }
+        }
+        return IKEv2Parser.newIKEv2Parser(receiveDatagram, keysGener);
     }
 
     public final void bufferedSend(final byte[] pkt_bytes, String peerAddr, int port) throws IOException

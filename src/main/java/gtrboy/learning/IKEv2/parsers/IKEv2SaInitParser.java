@@ -14,7 +14,7 @@ public class IKEv2SaInitParser extends IKEv2Parser {
     private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2SaInitParser(DatagramPacket pkt){
-        super(pkt, null);
+        super(IKEv2Parser.INIT, pkt, null);
     }
 
     @Override
@@ -44,9 +44,10 @@ public class IKEv2SaInitParser extends IKEv2Parser {
                     parseDefault();
             }
         }
-        // Types in range 0~16383 are inteded for reporting errors.
+        // Types in range 0~16383 are intended for reporting errors.
        if(notifyType <= NOTIFY_ERROR_MAX && notifyType != 0){
-            retstr = NOTIFY_TYPES.get(Integer.valueOf(notifyType));
+            retstr = NOTIFY_TYPES.get((int) notifyType);
+            LOGGER.debug("Notify Type: " + retstr);
             if (retstr == null){
                 LOGGER.error("Unknown Notify Type! ");
                 System.exit(-1);
