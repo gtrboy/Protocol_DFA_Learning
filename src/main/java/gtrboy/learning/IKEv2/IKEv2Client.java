@@ -102,33 +102,33 @@ public class IKEv2Client extends IKEv2{
         }
     }
 
-    private void send(byte[] data) throws IOException {
-        try {
-            InetSocketAddress peerSocketAddr = new InetSocketAddress(g_peerAddr, g_port);
-            DatagramPacket packet = new DatagramPacket(data, data.length, peerSocketAddr);
-            // DatagramSocket udpSock = new DatagramSocket();
-            _sock_.send(packet);
-            // udpSock.close();
-        } catch (Exception e) {
-            LOGGER.error("UDP socket send Error! ");
-            e.printStackTrace();
-        }
-    }
-
-
-
-    private DatagramPacket receive() throws IOException {
-        byte[] buffer = new byte[1024];
-        int msgId;
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-        while(true) {
-            _sock_.receive(packet);
-            if(validatePkt(packet)){
-                break;
-            }
-        }
-        return packet;
-    }
+//    private void send(byte[] data) throws IOException {
+//        try {
+//            InetSocketAddress peerSocketAddr = new InetSocketAddress(g_peerAddr, g_port);
+//            DatagramPacket packet = new DatagramPacket(data, data.length, peerSocketAddr);
+//            // DatagramSocket udpSock = new DatagramSocket();
+//            _sock_.send(packet);
+//            // udpSock.close();
+//        } catch (Exception e) {
+//            LOGGER.error("UDP socket send Error! ");
+//            e.printStackTrace();
+//        }
+//    }
+//
+//
+//
+//    private DatagramPacket receive() throws IOException {
+//        byte[] buffer = new byte[1024];
+//        int msgId;
+//        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+//        while(true) {
+//            _sock_.receive(packet);
+//            if(validatePkt(packet)){
+//                break;
+//            }
+//        }
+//        return packet;
+//    }
 
     public void prepare() {
         InitSocket();
@@ -177,6 +177,8 @@ public class IKEv2Client extends IKEv2{
         try{
             // Open the socket.
             open(g_port);
+            int timeout = (int) (g_Timeout * 1000);
+            setSoTimeout(timeout);
         } catch (SocketException e){
             LOGGER.error("UDP socket init error! ");
             e.printStackTrace();
@@ -834,78 +836,4 @@ public class IKEv2Client extends IKEv2{
     }
 
 
-
-
-
-
-
-
-    public String malformedIKEAuth(){
-        String retstr = null;
-        PktMalformed pkt = new PktMalformed("malformed_ike_auth.xml", g_iSpi, g_rSpi, g_curMsgId);
-        byte[] pktBytes = pkt.getPacketBytes();
-        // For Authentication, store the INIT_SA packet first.
-        //iInitSaPkt = pktBytes;
-
-        try{
-            send(pktBytes);
-        } catch (IOException e){
-            LOGGER.error("Send UDP packet Error!");
-            e.printStackTrace();
-        }
-
-        try {
-            DatagramPacket rPkt =  receive();
-
-
-        } catch (SocketTimeoutException e){
-            retstr = TIMEOUT;
-        } catch (IOException e){
-            LOGGER.error("UDP receive packet error! ");
-            e.printStackTrace();
-        }
-
-        addMsgId(true);
-        return retstr;
-    }
-
-    public String malformedRekeyIKE(){
-        String retstr = null;
-        PktMalformed pkt = new PktMalformed("malformed_cre_cld_sa_rekey_ike.xml", g_iSpi, g_rSpi, g_curMsgId);
-        byte[] pktBytes = pkt.getPacketBytes();
-        // For Authentication, store the INIT_SA packet first.
-        //iInitSaPkt = pktBytes;
-
-        try{
-            send(pktBytes);
-        } catch (IOException e){
-            LOGGER.error("Send UDP packet Error!");
-            e.printStackTrace();
-        }
-
-        try {
-            DatagramPacket rPkt =  receive();
-
-
-        } catch (SocketTimeoutException e){
-            retstr = TIMEOUT;
-        } catch (IOException e){
-            LOGGER.error("UDP receive packet error! ");
-            e.printStackTrace();
-        }
-
-        addMsgId(true);
-        return retstr;
-    }
-
-
-
-
-    public String infoCPReqAppverwithOldSA(){
-        return null;
-    }
-
-    public String infoCPReqAppverwithNewSA(){
-        return null;
-    }
 }

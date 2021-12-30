@@ -427,7 +427,8 @@ public class IKEv2KeysGener {
         if(isKeysPrepared()) {
             try {
                 byte[] hash = getMacDigest(skAi, content, _hmacAlg);
-                int checksumLen = hash.length / 2;
+                //int checksumLen = hash.length / 2;
+                int checksumLen = getChecksumLen();
                 checksum = new byte[checksumLen];
                 System.arraycopy(hash, 0, checksum, 0, checksumLen);
             }catch (NoSuchAlgorithmException | InvalidKeyException e){

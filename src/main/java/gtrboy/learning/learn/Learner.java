@@ -120,7 +120,7 @@ public class Learner {
         outputStreamWriter.close();
         LOGGER.info("Model written to " + filepath);
         //LearningUtil.deleteSSTandVizualize(filepath);
-        Visualization.visualize(result, sul.getAlphabet());
+        //Visualization.visualize(result, sul.getAlphabet());
         //return experiment;
     }
 

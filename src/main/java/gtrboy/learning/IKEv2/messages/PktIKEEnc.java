@@ -5,6 +5,7 @@ import gtrboy.learning.utils.DataUtils;
 import gtrboy.learning.utils.LogUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -18,6 +19,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 abstract class PktIKEEnc extends PktIKE{
     public IKEv2KeysGener keysGenerator;
@@ -146,8 +148,10 @@ abstract class PktIKEEnc extends PktIKE{
 
     private byte[] ParseEncHdr(Element pHdr, Element pData, int encDataLen){
         ByteArrayOutputStream bAos = new ByteArrayOutputStream();
-        int ivLen = Integer.parseInt(pData.element("inivec").attribute("size").getText());
-        int checkLen = Integer.parseInt(pData.element("checksum").attribute("size").getText());
+        //int ivLen = Integer.parseInt(pData.element("inivec").attribute("size").getText());
+        //int checkLen = Integer.parseInt(pData.element("checksum").attribute("size").getText());
+        int ivLen = keysGenerator.getIVLen();
+        int checkLen = keysGenerator.getChecksumLen();
         int totalLen = encDataLen + ivLen + checkLen + 4;
 
         for(Iterator it = pHdr.elementIterator(); it.hasNext();){
@@ -180,13 +184,34 @@ abstract class PktIKEEnc extends PktIKE{
         return padLen;
     }
 
+    protected int getTreeLen(Element root, int t_len){
+        int cur_len = t_len;
+        String nodeName = root.getName();
+        if(nodeName.equals("inivec") ){
+            return cur_len + keysGenerator.getIVLen();
+        } else if(nodeName.equals("checksum")){
+            return cur_len + keysGenerator.getChecksumLen();
+        }
+
+        if(root.attributeCount()!=0) {
+            Attribute attr = root.attribute("size");
+            int nodeLen = Integer.parseInt(attr.getText());
+            return nodeLen + cur_len;
+        }
+
+        List<Element> listElement = root.elements();
+        for(Element e:listElement){
+            cur_len = this.getTreeLen(e, cur_len);
+        }
+        return cur_len;
+    }
 
 
     private byte[] ParseEncPayload(Element encRoot, byte[] ikeHdr){
         ByteArrayOutputStream bAos = new ByteArrayOutputStream();
         Element pHdr = encRoot.element("p_header");
         Element pData = encRoot.element("data");
-        Element initVec = pData.element("inivec");
+        //Element initVec = pData.element("inivec");
         Element clearDataRoot = pData.element("enc_data");
         byte[] plaintext = getPlaintext(clearDataRoot, encDataLen);
 
