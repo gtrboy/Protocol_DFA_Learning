@@ -33,7 +33,7 @@
         <Root level="debug">
             <!-- 对info级别的日志，输出到console -->
             <AppenderRef ref="console" level="info" />
-            <!-- 对error级别的日志，输出到err，即上面定义的RollingFile -->
+            <!-- 对debug级别的日志，输出到log file，即上面定义的RollingFile -->
             <AppenderRef ref="logfile" level="debug" />
         </Root>
     </Loggers>

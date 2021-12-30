@@ -23,6 +23,7 @@ public class IKEv2CreChSaParser extends IKEv2Parser {
 
     public IKEv2CreChSaParser(DatagramPacket pkt, IKEv2KeysGener curKG){
         super(IKEv2Parser.CCSA, pkt, curKG);
+        LOGGER.debug("See CRE_CHILD_SA.");
     }
 
     @Override
@@ -89,6 +90,8 @@ public class IKEv2CreChSaParser extends IKEv2Parser {
     private void parseNoncePayload(){
         int nonceLen = parsePayloadHdr() - 4;
         r_nonce = new byte[nonceLen];
+        LOGGER.debug("Nonce Length: " + nonceLen);
+        LOGGER.debug("Offset: " + offset);
         System.arraycopy(pb, AO(nonceLen), r_nonce, 0, nonceLen);
     }
 
@@ -118,10 +121,6 @@ public class IKEv2CreChSaParser extends IKEv2Parser {
             LOGGER.error("Invalid protocol ID!");
             System.exit(-1);
         }
-        //AO(8);
-        r_spi = new byte[8];
-        System.arraycopy(pb, AO(8), r_spi, 0, 8);
-        AO(pLen - 20);
     }
 
     public byte[] getRNonce(){

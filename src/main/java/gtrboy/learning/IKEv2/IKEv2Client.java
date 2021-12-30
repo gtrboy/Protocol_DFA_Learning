@@ -228,7 +228,7 @@ public class IKEv2Client extends IKEv2{
                         retStr = initParser.parsePacket();
                         if("OK".equals(retStr)){
                             // For Authentication, store the INIT_SA packet first.
-                            g_iInitSaPkt = initParser.getPktBytes();
+                            g_iInitSaPkt = pktBytes;
                             g_rSpi = initParser.getRespSPI();
                             g_rKe = initParser.getPubKey();
                             g_rNonce = initParser.getNonce();
