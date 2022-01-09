@@ -13,6 +13,7 @@
         <p_header>
             <n_payld size="1">22</n_payld>
             <flag size="1">00</flag>
+            <!--len: 0058-->
             <payld_len size="2">null</payld_len>
         </p_header>
         <data>
@@ -37,13 +38,17 @@
                 </transform>
                 -->
                 <transform>
-                    <!-- Encryption Algorithm: DES (2) -->
+                    <!-- Encryption Algorithm: ENCR_AES_CBC (12), Key Length:256 -->
                     <last size="1">03</last>
                     <reserved size="1">00</reserved>
-                    <paylen size="2">0008</paylen>
+                    <paylen size="2">000c</paylen>
                     <transtype size="1">01</transtype>
                     <reserved size="1">00</reserved>
-                    <transid size="2">0002</transid>
+                    <transid size="2">000c</transid>
+                    <transattr>
+                        <attrtype size="2">800e</attrtype>
+                        <keylen size="2">0100</keylen>
+                    </transattr>
                 </transform>
                 <!--
                 <transform>

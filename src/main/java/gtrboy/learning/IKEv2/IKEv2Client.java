@@ -29,6 +29,7 @@ public class IKEv2Client extends IKEv2{
     private final String g_encAlg;
     private final String g_hmacAlg;
     private final String g_psk;
+    private final int nonce_len;
 
 
 
@@ -50,18 +51,16 @@ public class IKEv2Client extends IKEv2{
     private int g_curMsgId = 0;
     private int g_oldMsgId = 0;
 
-    private DatagramSocket _sock_;
+    //private DatagramSocket _sock_;
     private IKEv2KeysGener g_curKeyGen;
     private IKEv2KeysGener g_oldKeyGen;
     private final TelnetMain g_telnetClient;
 
     private static final String TIMEOUT = "TIMEOUT";
     private static final String ERROR = "ERROR";
-    private static final int NONCE_LEN = 20;
     private static final int IPSEC_SPI_LEN = 4;
     private static final int IKE_SPI_LEN = 8;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2Client(IKEv2Config config) {
         String telnetUserName;
@@ -79,6 +78,7 @@ public class IKEv2Client extends IKEv2{
         g_encAlg = config.getEncFunc();
         g_hmacAlg = config.getHmacFunc();
         g_psk = config.getPsk();
+        nonce_len = config.getNonceLen();
 
         telnetUserName = config.getTelUser();
         telnetPassword = config.getTelPass();
@@ -164,6 +164,9 @@ public class IKEv2Client extends IKEv2{
             case "fortigate":
                 g_telnetClient.resetFG();
                 break;
+            case "hillstone":
+                g_telnetClient.resetHS();
+                break;
             default:
                 LOGGER.error("Invalid SUL Name! ");
                 System.exit(-1);
@@ -193,7 +196,7 @@ public class IKEv2Client extends IKEv2{
         InitSPI();
         g_curKeyGen = prepareKeyGen();
         g_iKe = g_curKeyGen.getPubKey();
-        g_iNnonce = DataUtils.genRandomBytes(NONCE_LEN);
+        g_iNnonce = DataUtils.genRandomBytes(nonce_len);
         resetMsgId(0, true);
     }
 
@@ -296,9 +299,9 @@ public class IKEv2Client extends IKEv2{
                             if ("OK".equals(retStr)) {
                                 g_iChildSpi = i_child_spi;
                                 g_rChildSpi = authParser.getRChildSpi();
-                            } else {
+                            }/* else {
                                 g_iChildSpi = null;
-                            }
+                            }*/
                             break;
                         case IKEv2Parser.INFO:
                             IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
@@ -333,8 +336,9 @@ public class IKEv2Client extends IKEv2{
             retStr = ERROR;
         }else {
             IKEv2KeysGener tmpKeyG = prepareKeyGen();
-            byte[] new_spi = DataUtils.genRandomBytes(IKE_SPI_LEN);
-            byte[] new_nc = DataUtils.genRandomBytes(NONCE_LEN);
+            //byte[] new_spi = DataUtils.genRandomBytes(IKE_SPI_LEN);
+            byte[] new_spi = DataUtils.genNewSpiForHs(g_iSpi);
+            byte[] new_nc = DataUtils.genRandomBytes(nonce_len);
             byte[] new_ke = tmpKeyG.getPubKey();
             PktRekeyIkeSa pkt = new PktRekeyIkeSa(g_sulName + "/cre_cld_sa_rekey_ike_sa.xml", g_iSpi, g_rSpi, g_curMsgId,
                     g_curKeyGen, new_spi, new_nc, new_ke);
@@ -426,12 +430,15 @@ public class IKEv2Client extends IKEv2{
                     if (parser.getType() == IKEv2Parser.INFO) {
                         IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
                         retStr = infoParser.parsePacket();
-                        if ("OK_DEL".equals(retStr)) {
+                        if ("OK_DEL".equals(retStr) || "EmptyInfo".equals(retStr)) {
                             resetMsgId(0, true);
                             g_iSpi = null;
                             g_rSpi = null;
                             g_curKeyGen = null;
-                            retStr = "OK";
+                            //retStr = "OK";
+                            if ("OK_DEL".equals(retStr)){
+                                retStr = "OK";
+                            }
                         } else {
                             addMsgId(true);
                         }
@@ -478,12 +485,14 @@ public class IKEv2Client extends IKEv2{
                     if (parser.getType() == IKEv2Parser.INFO) {
                         IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
                         retStr = infoParser.parsePacket();
-                        if ("OK_DEL".equals(retStr)) {
+                        if ("OK_DEL".equals(retStr) || "EmptyInfo".equals(retStr)) {
+                            resetMsgId(0, false);
                             g_iOldSpi = null;
                             g_rOldSpi = null;
                             g_oldKeyGen = null;
-                            retStr = "OK";
-                            resetMsgId(0, false);
+                            if ("OK_DEL".equals(retStr)){
+                                retStr = "OK";
+                            }
                         } else {
                             addMsgId(false);
                         }
@@ -508,20 +517,21 @@ public class IKEv2Client extends IKEv2{
 
 
     /* Child SA Operations */
-    public String rekeyChildSaWithCurIkeSa(){
+
+    private String newChildSaWithCurIkeSa(String patternFile){
         String retStr = null;
         if(g_iSpi ==null || g_rSpi ==null || g_iChildSpi ==null){
             retStr = ERROR;
         }else {
             byte[] old_c_spi;
             byte[] new_c_spi = DataUtils.genRandomBytes(IPSEC_SPI_LEN);
-            byte[] new_nc = DataUtils.genRandomBytes(NONCE_LEN);
+            byte[] new_nc = DataUtils.genRandomBytes(nonce_len);
             if (g_iChildSpi != null) {
                 old_c_spi = g_iChildSpi;
             } else {
                 old_c_spi = DataUtils.genRandomBytes(4);
             }
-            PktRekeyChildSa pkt = new PktRekeyChildSa(g_sulName + "/cre_cld_sa_rekey_cld_sa.xml", g_iSpi, g_rSpi, g_curMsgId,
+            PktRekeyChildSa pkt = new PktRekeyChildSa(g_sulName + patternFile, g_iSpi, g_rSpi, g_curMsgId,
                     g_curKeyGen, old_c_spi, new_c_spi, new_nc);
 
             beginBufferedOps();
@@ -570,24 +580,23 @@ public class IKEv2Client extends IKEv2{
             }
             endBufferedOps();
         }
-        LOGGER.info("rekeyChildSaWithCurIkeSa, RET: " + retStr);
         return retStr;
     }
 
-    public String rekeyChildSaWithOldIkeSa(){
+    private String newChildSaWithOldIkeSa(String patternFile){
         String retStr = null;
         if(g_iOldSpi ==null || g_rOldSpi ==null || g_iChildSpi ==null){
             retStr = ERROR;
         }else {
             byte[] old_c_spi;
             byte[] new_c_spi = DataUtils.genRandomBytes(IPSEC_SPI_LEN);
-            byte[] new_nc = DataUtils.genRandomBytes(NONCE_LEN);
+            byte[] new_nc = DataUtils.genRandomBytes(nonce_len);
             if (g_iChildSpi != null) {
                 old_c_spi = g_iChildSpi;
             } else {
                 old_c_spi = DataUtils.genRandomBytes(4);
             }
-            PktRekeyChildSa pkt = new PktRekeyChildSa(g_sulName + "/cre_cld_sa_rekey_cld_sa.xml", g_iOldSpi, g_rOldSpi, g_oldMsgId,
+            PktRekeyChildSa pkt = new PktRekeyChildSa(g_sulName + patternFile, g_iOldSpi, g_rOldSpi, g_oldMsgId,
                     g_oldKeyGen, old_c_spi, new_c_spi, new_nc);
 
             beginBufferedOps();
@@ -636,6 +645,30 @@ public class IKEv2Client extends IKEv2{
             }
             endBufferedOps();
         }
+        //LOGGER.info("rekeyChildSaWithOldIkeSa, RET: " + retStr);
+        return retStr;
+    }
+
+    public String creChildSaWithCurIkeSa(){
+        String retStr = newChildSaWithCurIkeSa("/cre_cld_sa_cre_cld_sa.xml");
+        LOGGER.info("creChildSaWithCurIkeSa, RET: " + retStr);
+        return retStr;
+    }
+
+    public String creChildSaWithOldIkeSa(){
+        String retStr = newChildSaWithOldIkeSa("/cre_cld_sa_cre_cld_sa.xml");
+        LOGGER.info("creChildSaWithOldIkeSa, RET: " + retStr);
+        return retStr;
+    }
+
+    public String rekeyChildSaWithCurIkeSa(){
+        String retStr = newChildSaWithCurIkeSa("/cre_cld_sa_rekey_cld_sa.xml");
+        LOGGER.info("rekeyChildSaWithCurIkeSa, RET: " + retStr);
+        return retStr;
+    }
+
+    public String rekeyChildSaWithOldIkeSa(){
+        String retStr = newChildSaWithOldIkeSa("/cre_cld_sa_rekey_cld_sa.xml");
         LOGGER.info("rekeyChildSaWithOldIkeSa, RET: " + retStr);
         return retStr;
     }
@@ -835,5 +868,118 @@ public class IKEv2Client extends IKEv2{
 
     }
 
+    /* Others */
+
+    public String emptyEncInfo(){
+        String retStr = null;
+        PktInfoEncEmpty pkt = new PktInfoEncEmpty(g_sulName + "/info_enc_empty.xml", g_iSpi, g_rSpi, g_curMsgId, g_curKeyGen);
+        byte[] pktBytes = pkt.getPacketBytes();
+
+        beginBufferedOps();
+        int round = g_RetryNum;
+        while(round>=0){
+            try{
+                //send(pktBytes);
+                bufferedSend(pktBytes, g_peerAddr, g_port);
+                g_wantedMsgId = g_curMsgId;
+            } catch (IOException e) {
+                LOGGER.error("Send UDP packet Error!");
+                e.printStackTrace();
+            }
+            try {
+                IKEv2Parser parser= bufferedReceive(g_curKeyGen);
+                switch (parser.getType()){
+                    case IKEv2Parser.INIT:
+                        IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                        retStr = initParser.parsePacket();
+                        break;
+                    case IKEv2Parser.AUTH:
+                        IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                        retStr = authParser.parsePacket();
+                        break;
+                    case IKEv2Parser.CCSA:
+                        IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                        retStr = ccsaParser.parsePacket();
+                        break;
+                    case IKEv2Parser.INFO:
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        break;
+                    default:
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
+                }
+                addMsgId(true);
+                break;
+            } catch (SocketTimeoutException e){
+                retStr = TIMEOUT;
+                round--;
+                //LOGGER.debug("Timeout in IKE_INIT_SA!");
+            } catch (IOException e){
+                LOGGER.error("UDP receive packet error! ");
+                e.printStackTrace();
+            }
+        }
+        endBufferedOps();
+
+        LOGGER.info("emptyEncInfo, RET: " + retStr);
+        return retStr;
+    }
+
+    public String emptyInfo(){
+        String retStr = null;
+        PktInfoEmpty pkt = new PktInfoEmpty(g_sulName + "/info_empty.xml", g_iSpi, g_rSpi, g_curMsgId);
+        byte[] pktBytes = pkt.getPacketBytes();
+
+        beginBufferedOps();
+        int round = g_RetryNum;
+        while(round>=0){
+            try{
+                //send(pktBytes);
+                bufferedSend(pktBytes, g_peerAddr, g_port);
+                g_wantedMsgId = g_curMsgId;
+            } catch (IOException e) {
+                LOGGER.error("Send UDP packet Error!");
+                e.printStackTrace();
+            }
+            try {
+                IKEv2Parser parser= bufferedReceive(null);
+                switch (parser.getType()){
+                    case IKEv2Parser.INIT:
+                        IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                        retStr = initParser.parsePacket();
+                        break;
+                    case IKEv2Parser.AUTH:
+                        IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                        retStr = authParser.parsePacket();
+                        break;
+                    case IKEv2Parser.CCSA:
+                        IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                        retStr = ccsaParser.parsePacket();
+                        break;
+                    case IKEv2Parser.INFO:
+                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                        retStr = infoParser.parsePacket();
+                        break;
+                    default:
+                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                        System.exit(-1);
+                }
+                addMsgId(true);
+                break;
+            } catch (SocketTimeoutException e){
+                retStr = TIMEOUT;
+                round--;
+                //LOGGER.debug("Timeout in IKE_INIT_SA!");
+            } catch (IOException e){
+                LOGGER.error("UDP receive packet error! ");
+                e.printStackTrace();
+            }
+        }
+        endBufferedOps();
+
+        LOGGER.info("emptyEncInfo, RET: " + retStr);
+        return retStr;
+    }
 
 }

@@ -14,6 +14,7 @@ public class IKEv2Config {
     private final String encFunc;    // encryption function
     private final String psk;
     private final int dhGroup;
+    private final int nonceLen;
 
     private final int retry_num;
     private final String telnet_username;
@@ -36,6 +37,7 @@ public class IKEv2Config {
         encFunc = props.getProperty("enc_algo");
         psk = props.getProperty("psk");
         dhGroup = Integer.parseInt(props.getProperty("dh_group"));
+        nonceLen = Integer.parseInt(props.getProperty("nonce_len"));
 
         telnet_username = props.getProperty("tel_user");
         telnet_password = props.getProperty("tel_pass");
@@ -74,6 +76,10 @@ public class IKEv2Config {
 
     public String getHmacFunc(){
         return hmacFunc;
+    }
+
+    public int getNonceLen(){
+        return nonceLen;
     }
 
 

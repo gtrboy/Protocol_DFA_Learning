@@ -20,7 +20,6 @@ public class PktIKEAuthPSK extends PktIKEEnc{
     private byte[] initIDPayload = null;
     private byte[] ipsecSPI = null;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktIKEAuthPSK(String patternFile, byte[] initspi, byte[] respspi, int msgid, IKEv2KeysGener keysGen,
                          byte[] r_nonce, byte[] i_initsa_pkt, String local_address, byte[] ipsec_spi) {

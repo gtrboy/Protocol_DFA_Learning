@@ -18,7 +18,7 @@
         <data>
             <!-- Initialization Vector -->
             <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
-            <inivec size="8">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
+            <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
             <enc_data>
                 <payload_sa>
                     <p_header>
@@ -45,8 +45,8 @@
                                 <paylen size="2">0008</paylen>
                                 <transtype size="1">01</transtype>
                                 <reserved size="1">00</reserved>
-                                <!-- ENCR_DES -->
-                                <transid size="2">0002</transid>
+                                <!-- ENCR_3DES -->
+                                <transid size="2">0003</transid>
                             </transform>
                             <transform>
                                 <last size="1">03</last>
@@ -104,6 +104,7 @@
                 </payload_tsi>
                 <payload_tsr>
                     <p_header>
+                        <!-- Notify -->
                         <n_payld size="1">00</n_payld>
                         <flag size="1">00</flag>
                         <payld_len size="2">null</payld_len>

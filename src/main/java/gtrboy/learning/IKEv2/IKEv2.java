@@ -12,6 +12,8 @@ import gtrboy.learning.utils.DataUtils;
 import org.apache.commons.net.DatagramSocketClient;
 import org.apache.commons.net.tftp.TFTPPacket;
 import org.apache.commons.net.tftp.TFTPPacketException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class IKEv2 extends DatagramSocketClient {
 
@@ -42,6 +44,8 @@ public class IKEv2 extends DatagramSocketClient {
     byte[] sendBuffer;
 
     protected int g_wantedMsgId = 0;
+
+    protected static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2()
     {
@@ -76,9 +80,16 @@ public class IKEv2 extends DatagramSocketClient {
         int msgId = DataUtils.bytesToIntB(bPkt, 20);
         //LOGGER.debug("Msg Id: " + msgId);
         // discard cmd del information packet or init request packet
-        if((exchType==0x25 && flags==0x00) || flags==0x08){
+        if(flags==0x00 || flags==0x08){
+            byte[] tmp = new byte[1];
+            tmp[0] = flags;
+            byte[] tmp1 = new byte[1];
+            tmp1[0] = exchType;
+            LOGGER.debug("Find invalid flags or exchange type. Flags: " + DataUtils.bytesToHexStr(tmp) +
+                    " Exchange Type: " + DataUtils.bytesToHexStr(tmp1));
             ret = false;
         }else if(msgId!= g_wantedMsgId) {
+            LOGGER.debug("Find unwanted Msg ID: " + msgId);
             ret = false;
         }else {
             ret = true;

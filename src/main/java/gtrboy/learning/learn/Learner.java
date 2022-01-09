@@ -40,7 +40,7 @@ public class Learner {
     private final SULMapper<String, String, ConcreteMethodInput, Object> mapper;
     private static final String MODEL_DIR = "learnedModels/";
     private static final int SEED = 18021996;
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
+    private static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public Learner(SULMapper<String, String, ConcreteMethodInput, Object> mapper){
         this.mapper = mapper;

@@ -26,18 +26,27 @@ abstract class PktIKEEnc extends PktIKE{
     public boolean isEnc = false;
     public int padLen = 0;
     public int encDataLen = 0;
+    public int ivLen = 0;
+    public int checkLen = 0;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktIKEEnc(byte[] initspi, byte[] respspi, int msgid, IKEv2KeysGener Gener){
         super(initspi, respspi, msgid);
         keysGenerator = Gener;
         if(keysGenerator!=null) {
             isEnc = keysGenerator.isKeysPrepared();
+            ivLen = keysGenerator.getIVLen();
+            checkLen = keysGenerator.getChecksumLen();
         }else {
             isEnc = false;
         }
+
+        if(!isEnc){
+            LOGGER.error("Keys are not prepared! ");
+            System.exit(-1);
+        }
     }
+
 
     protected abstract byte[] getPlaintext(Element plainRoot, int DataLen);
 

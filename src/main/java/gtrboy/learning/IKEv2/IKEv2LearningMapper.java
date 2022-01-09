@@ -43,7 +43,7 @@ public class IKEv2LearningMapper implements SULMapper<String, String, ConcreteMe
     private Method m_DEL_OLD_CHILD_SA_CUR_IKE;
     private Method m_DEL_OLD_CHILD_SA_OLD_IKE;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
+    private static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2LearningMapper(IKEv2Config config) {
         try {

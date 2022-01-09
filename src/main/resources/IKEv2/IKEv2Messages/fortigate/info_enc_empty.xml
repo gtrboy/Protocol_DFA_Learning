@@ -11,29 +11,15 @@
     </ike_header>
     <payload_enc>
         <p_header>
-            <n_payld size="1">2a</n_payld>
+            <n_payld size="1">00</n_payld>
             <flag size="1">00</flag>
             <payld_len size="2">null</payld_len>
         </p_header>
         <data>
             <!-- Initialization Vector -->
             <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
-            <inivec size="8">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
-            <enc_data>
-                <payload_del>
-                    <p_header>
-                        <n_payld size="1">00</n_payld>
-                        <flag size="1">00</flag>
-                        <payld_len size="2">null</payld_len>
-                    </p_header>
-                    <data>
-                        <protoid size="1">03</protoid>
-                        <spisize size="1">04</spisize>
-                        <spinum size="2">0001</spinum>
-                        <spi size="4">null</spi>
-                    </data>
-                </payload_del>
-            </enc_data>
+            <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
+            <enc_data size="8">0706050403020107</enc_data>
             <!-- The size of the checksum should be changed if the integrity algorithm been changed. -->
             <checksum size="32">null</checksum>
         </data>

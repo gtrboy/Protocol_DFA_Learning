@@ -13,9 +13,6 @@ public class IKEv2AuthParser extends IKEv2Parser {
     byte[] rChildSpi = null;
     //byte[] peerIV = null;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
-
-
     public IKEv2AuthParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
         super(IKEv2Parser.AUTH, pkt, keysGener);
         keyG = keysGener;

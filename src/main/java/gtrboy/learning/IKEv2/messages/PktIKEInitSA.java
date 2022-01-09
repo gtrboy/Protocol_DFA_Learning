@@ -16,8 +16,7 @@ public class PktIKEInitSA extends PktIKE {
     private byte[] ke;
     private byte[] nc;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
-    
+
     public PktIKEInitSA(String patternFile, byte[] initspi, byte[] respspi, int msgid, byte[] key_exchg, byte[] nonce)  {
         super(initspi, respspi, msgid);
         ke = key_exchg;

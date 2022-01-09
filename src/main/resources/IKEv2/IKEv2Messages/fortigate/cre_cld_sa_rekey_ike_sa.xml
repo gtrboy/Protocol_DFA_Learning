@@ -85,7 +85,7 @@
                         <payld_len size="2">null</payld_len>
                     </p_header>
                     <data>
-                        <nc_data size="20">null</nc_data>
+                        <nc_data size="32">null</nc_data>
                     </data>
                 </payload_nc>
                 <payload_ke>

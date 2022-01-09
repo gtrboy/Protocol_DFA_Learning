@@ -16,7 +16,6 @@ public class PktRekeyIkeSa extends PktIKEEnc{
     private byte[] newNc = null;
     private byte[] newKe = null;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktRekeyIkeSa(String patternFile, byte[] initspi, byte[] respspi, int msgid,
                          IKEv2KeysGener keysGener, byte[] new_spi, byte[] new_nc, byte[] new_ke){

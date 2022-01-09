@@ -18,10 +18,7 @@ abstract class PktIKE {
     protected byte[] msgid;
 
     protected static final int IKE_HDR_LEN = 28;
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
-    //Document document;
-
-    //public byte[] packetbytes;
+    protected static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktIKE(byte[] initspi, byte[] respspi, int msgid){
         this.initspi = initspi;

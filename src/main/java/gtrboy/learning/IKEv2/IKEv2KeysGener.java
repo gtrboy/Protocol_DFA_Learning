@@ -64,7 +64,7 @@ public class IKEv2KeysGener {
     //private static final String IV_HEX_STR = "a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0";
     
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
+    private static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
 
     public IKEv2KeysGener(int dh_group, String encryption, String integrity, String preSecKey){

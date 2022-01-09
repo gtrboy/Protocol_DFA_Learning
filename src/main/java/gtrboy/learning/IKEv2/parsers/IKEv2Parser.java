@@ -39,7 +39,7 @@ public abstract class IKEv2Parser {
     public static final int CCSA = 3;
     public static final int INFO = 4;
 
-    private static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
+    protected static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
 
     public static final HashMap<Integer, String> NOTIFY_TYPES = new HashMap<Integer, String>(){{

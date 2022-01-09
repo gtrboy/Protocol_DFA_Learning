@@ -1,9 +1,11 @@
 package gtrboy.learning.utils;
 
+import java.nio.ByteBuffer;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Random;
+import java.nio.ByteOrder;
 
 public final class DataUtils {
     private DataUtils(){
@@ -27,6 +29,18 @@ public final class DataUtils {
         src[1] = (byte) (value & 0xFF);
         return src;
     }
+
+    public static long bytesToLong(byte[] input, int offset, boolean littleEndian) {
+        // 将byte[] 封装为 ByteBuffer
+        ByteBuffer buffer = ByteBuffer.wrap(input,offset,8);
+        if(littleEndian){
+            // ByteBuffer.order(ByteOrder) 方法指定字节序,即大小端模式(BIG_ENDIAN/LITTLE_ENDIAN)
+            // ByteBuffer 默认为大端(BIG_ENDIAN)模式
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
+        return buffer.getLong();
+    }
+
 
     public static int bytesToIntB(byte[] src, int offset) {
         int value;
@@ -108,6 +122,26 @@ public final class DataUtils {
         byte[] bt = new byte[length];
         r.nextBytes(bt);
         return bt;
+    }
+
+    public static byte[] genNewSpiForHs(byte[] oldSpi){
+        long oldLong = 0;
+        long newLong = 0;
+        byte[] newBytes = null;
+        int result = 0;
+        oldLong = bytesToLong(oldSpi, 0, true);
+        do{
+            newBytes = genRandomBytes(8);
+            newLong = bytesToLong(newBytes, 0, true);
+            result = Long.compareUnsigned(oldLong, newLong);
+        }while(result == -1);
+
+        //System.out.printf("old: %x\n", oldLong);
+        //System.out.printf("new: %x\n", newLong);
+        //System.out.printf("old: %d\n", oldLong);
+        //System.out.printf("new: %d\n", newLong);
+
+        return newBytes;
     }
 
     public static byte[] genEmptyBytes(int length){

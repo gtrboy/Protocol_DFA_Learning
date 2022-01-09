@@ -4,12 +4,16 @@ import gtrboy.learning.IKEv2.IKEv2Config;
 import gtrboy.learning.IKEv2.IKEv2LearningMapper;
 import gtrboy.learning.learn.Learner;
 import gtrboy.learning.utils.LogUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
 public class IKEv2Main {
+
+    private static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     // add: read from configuration file
     private static String experimentName = "IKEv2Model";

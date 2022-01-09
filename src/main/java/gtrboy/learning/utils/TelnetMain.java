@@ -44,7 +44,14 @@ public class TelnetMain {
 
     private static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
     private static final String CISCO_RESET_CMD = "clear crypto ikev2 sa fast";
+
     private static final String FG_RESET_CMD = "diagnose vpn ike gateway clear";
+
+    private static final String HS_RESET_CMD1 = "conf";
+    private static final String HS_RESET_CMD2 = "tunnel ipsec ipsec-test ikev2";
+    private static final String HS_RESET_CMD3 = "no ikev2-peer";
+    private static final String HS_RESET_CMD4 = "ikev2-peer v2";
+    private static final String HS_RESET_CMD5 = "end";
     //private static final String FG_FLUSH_CMD = "diagnose vpn tunnel flush";
 
 
@@ -86,6 +93,22 @@ public class TelnetMain {
                     telnet.setKeepAlive(true);
                     write(user);
                     String msg=readUntil("Password: ");
+                    write(password);
+                    msg=readUntil("# ");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+            case "hillstone":
+                try {
+                    telnet.connect(ip, Integer.parseInt(port));
+                    in = telnet.getInputStream();
+                    out = new PrintStream(telnet.getOutputStream());
+                    telnet.setKeepAlive(true);
+                    String msg;
+                    msg = readUntil("login: ");
+                    write(user);
+                    msg=readUntil("password: ");
                     write(password);
                     msg=readUntil("# ");
                 } catch (Exception e) {
@@ -134,6 +157,17 @@ public class TelnetMain {
 
     public void resetFG(){
         sendCommand(FG_RESET_CMD);
+        //sendCommand(FG_FLUSH_CMD);
+    }
+
+    public void resetHS(){
+
+        sendCommand(HS_RESET_CMD1);
+        sendCommand(HS_RESET_CMD2);
+        sendCommand(HS_RESET_CMD3);
+        sendCommand(HS_RESET_CMD4);
+        sendCommand(HS_RESET_CMD5);
+
         //sendCommand(FG_FLUSH_CMD);
     }
 

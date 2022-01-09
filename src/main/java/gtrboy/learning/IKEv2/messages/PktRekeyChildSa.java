@@ -16,7 +16,6 @@ public class PktRekeyChildSa extends PktIKEEnc{
     private byte[] newCldSpi = null;
     private byte[] newNc = null;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public PktRekeyChildSa(String patternFile, byte[] initspi, byte[] respspi, int msgid,
                            IKEv2KeysGener keysGener, byte[] old_c_spi, byte[] new_c_spi, byte[] new_nonce){

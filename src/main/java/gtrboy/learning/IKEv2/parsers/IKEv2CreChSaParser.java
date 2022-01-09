@@ -19,7 +19,6 @@ public class IKEv2CreChSaParser extends IKEv2Parser {
     private boolean isIke = false;
     private boolean isEsp = false;
 
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2CreChSaParser(DatagramPacket pkt, IKEv2KeysGener curKG){
         super(IKEv2Parser.CCSA, pkt, curKG);

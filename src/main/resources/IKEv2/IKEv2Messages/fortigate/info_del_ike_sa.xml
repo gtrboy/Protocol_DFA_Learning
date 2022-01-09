@@ -1,4 +1,4 @@
-<create_child_sa>
+<informational>
     <ike_header>
         <initspi size="8">null</initspi>
         <respspi size="8">null</respspi>
@@ -37,4 +37,4 @@
             <checksum size="32">null</checksum>
         </data>
     </payload_enc>
-</create_child_sa>
+</informational>

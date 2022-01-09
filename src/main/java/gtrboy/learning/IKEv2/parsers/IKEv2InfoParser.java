@@ -9,7 +9,6 @@ import java.net.DatagramPacket;
 public class IKEv2InfoParser extends IKEv2Parser{
 
     //boolean isCurrent;
-    private final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
     public IKEv2InfoParser(DatagramPacket pkt, IKEv2KeysGener keysGener){
         super(IKEv2Parser.INFO, pkt, keysGener);
