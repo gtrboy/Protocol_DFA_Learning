@@ -36,13 +36,14 @@ abstract class PktIKE {
     }
 
     protected void doConstruct(String patternFile){
+        //LOGGER.info("cur file: " + patternFile);
         InputStream xmlStream = this.getClass().getClassLoader().getResourceAsStream("IKEv2/IKEv2Messages/" + patternFile);
         try{
             Element root = getXMLRoot(xmlStream);
             packetBytes = fromXMLToBytes(root);
         } catch (DocumentException e){
             LOGGER.error("Document Error!");
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 

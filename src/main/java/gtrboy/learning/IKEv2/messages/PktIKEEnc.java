@@ -159,8 +159,8 @@ abstract class PktIKEEnc extends PktIKE{
         ByteArrayOutputStream bAos = new ByteArrayOutputStream();
         //int ivLen = Integer.parseInt(pData.element("inivec").attribute("size").getText());
         //int checkLen = Integer.parseInt(pData.element("checksum").attribute("size").getText());
-        int ivLen = keysGenerator.getIVLen();
-        int checkLen = keysGenerator.getChecksumLen();
+        //int ivLen = keysGenerator.getIVLen();
+        //int checkLen = keysGenerator.getChecksumLen();
         int totalLen = encDataLen + ivLen + checkLen + 4;
 
         for(Iterator it = pHdr.elementIterator(); it.hasNext();){
@@ -193,6 +193,7 @@ abstract class PktIKEEnc extends PktIKE{
         return padLen;
     }
 
+    @Override
     protected int getTreeLen(Element root, int t_len){
         int cur_len = t_len;
         String nodeName = root.getName();

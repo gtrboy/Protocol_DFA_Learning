@@ -1,10 +1,8 @@
 package gtrboy.learning.IKEv2.messages;
 
+import gtrboy.learning.IKEv2.IKEv2AuthType;
 import gtrboy.learning.IKEv2.IKEv2KeysGener;
 import gtrboy.learning.utils.DataUtils;
-import gtrboy.learning.utils.LogUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.dom4j.Element;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -100,7 +98,7 @@ public class PktIKEAuthPSK extends PktIKEEnc{
             if(eleName.equals("auth_data")){
                 int authLen = Integer.parseInt(element.attribute("size").getText());
                 if(isEnc){
-                    bAos.writeBytes(keysGenerator.calcAuth(iInitSaPkt, rNonce, initIDPayload));
+                    bAos.writeBytes(keysGenerator.calcAuth(IKEv2AuthType.PSK, iInitSaPkt, rNonce, initIDPayload));
                 }else{
                     bAos.writeBytes(DataUtils.genRandomBytes(authLen));
                 }

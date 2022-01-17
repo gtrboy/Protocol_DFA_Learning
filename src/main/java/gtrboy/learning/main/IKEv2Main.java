@@ -26,9 +26,11 @@ public class IKEv2Main {
      */
 
     private static List<String> in_alphabets = Arrays.asList(
-            "AUTH_PSK", "REKEY_IKE_SA", "DEL_CUR_IKE_SA", "DEL_OLD_IKE_SA", "REKEY_CHILD_SA_CUR_IKE",
-            "REKEY_CHILD_SA_OLD_IKE", "DEL_CUR_CHILD_SA_CUR_IKE", "DEL_CUR_CHILD_SA_OLD_IKE", "DEL_OLD_CHILD_SA_CUR_IKE",
-            "DEL_OLD_CHILD_SA_OLD_IKE");
+            "AUTH_CERT_HTTP", "REKEY_IKE_SA", "DEL_CUR_IKE_SA", "DEL_OLD_IKE_SA", "REKEY_CHILD_SA_CUR_IKE", "REKEY_CHILD_SA_OLD_IKE",
+            "DEL_CUR_CHILD_SA_CUR_IKE", "DEL_CUR_CHILD_SA_OLD_IKE", "DEL_OLD_CHILD_SA_CUR_IKE", "DEL_OLD_CHILD_SA_OLD_IKE"
+            //"EMP_INFO_CUR", "EMP_ENC_INFO_CUR", "EMP_INFO_OLD", "EMP_ENC_INFO_CUR",
+            //"EMP_INFO_CUR_RESP", "EMP_ENC_INFO_CUR_RESP", "EMP_INFO_OLD_RESP", "EMP_ENC_INFO_CUR_RESP"
+    );
 
     public static void main(String[] args) throws NoSuchMethodException, IOException, InterruptedException {
         IKEv2Config config = new IKEv2Config("IKEv2/ikev2_config.properties");

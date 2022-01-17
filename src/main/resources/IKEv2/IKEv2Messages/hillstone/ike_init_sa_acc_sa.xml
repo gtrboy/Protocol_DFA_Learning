@@ -1,31 +1,31 @@
 <ike_init_sa>
     <ike_header>
-        <initspi size="8">null</initspi>
-        <respspi size="8">0000000000000000</respspi>
-        <nextpld size="1">21</nextpld>
-        <version size="1">20</version>
-        <exch_type size="1">22</exch_type>
-        <flags size="1">08</flags>
-        <msgid size="4">null</msgid>
-        <length size="4">null</length>
+        <initspi size="8" attr="unneed">null</initspi>
+        <respspi size="8" attr="unneed">0000000000000000</respspi>
+        <nextpld size="1" attr="bin">21</nextpld>
+        <version size="1" attr="bin">20</version>
+        <exch_type size="1" attr="bin">22</exch_type>
+        <flags size="1" attr="bin">08</flags>
+        <msgid size="4" attr="unneed">null</msgid>
+        <length size="4" attr="len">null</length>
     </ike_header>
     <payload_sa>
         <p_header>
-            <n_payld size="1">22</n_payld>
-            <flag size="1">00</flag>
+            <n_payld size="1" attr="bin">22</n_payld>
+            <flag size="1" attr="bin">00</flag>
             <!--len: 0058-->
-            <payld_len size="2">null</payld_len>
+            <payld_len size="2" attr="len">null</payld_len>
         </p_header>
         <data>
             <proposal>
                 <prop_header>
-                    <n_payld size="1">00</n_payld>
-                    <resv size="1">00</resv>
-                    <paylen size="2">null</paylen>
-                    <prop_num size="1">01</prop_num>
-                    <protoid size="1">01</protoid>
-                    <spisize size="1">00</spisize>
-                    <prop_trans size="1">04</prop_trans>
+                    <n_payld size="1" attr="bin">00</n_payld>
+                    <resv size="1" attr="unneed">00</resv>
+                    <paylen size="2" attr="len">null</paylen>
+                    <prop_num size="1" attr="len">01</prop_num>
+                    <protoid size="1" attr="bin">01</protoid>
+                    <spisize size="1" attr="len">00</spisize>
+                    <prop_trans size="1" attr="len">04</prop_trans>
                 </prop_header>
                 <!--
                 <transform>
@@ -39,15 +39,15 @@
                 -->
                 <transform>
                     <!-- Encryption Algorithm: ENCR_AES_CBC (12), Key Length:256 -->
-                    <last size="1">03</last>
-                    <reserved size="1">00</reserved>
-                    <paylen size="2">000c</paylen>
-                    <transtype size="1">01</transtype>
-                    <reserved size="1">00</reserved>
-                    <transid size="2">000c</transid>
+                    <last size="1" attr="bin">03</last>
+                    <reserved size="1" attr="unneed">00</reserved>
+                    <paylen size="2" attr="len">000c</paylen>
+                    <transtype size="1" attr="bin">01</transtype>
+                    <reserved size="1" attr="unneed">00</reserved>
+                    <transid size="2" attr="bin">000c</transid>
                     <transattr>
-                        <attrtype size="2">800e</attrtype>
-                        <keylen size="2">0100</keylen>
+                        <attrtype size="2" attr="bin">800e</attrtype>
+                        <keylen size="2" attr="len">0100</keylen>
                     </transattr>
                 </transform>
                 <!--
@@ -62,12 +62,12 @@
                 -->
                 <transform>
                     <!-- PRF: PRF_HMAC_SHA2_512 (7) -->
-                    <last size="1">03</last>
-                    <reserved size="1">00</reserved>
-                    <paylen size="2">0008</paylen>
-                    <transtype size="1">02</transtype>
-                    <reserved size="1">00</reserved>
-                    <transid size="2">0007</transid>
+                    <last size="1" attr="bin">03</last>
+                    <reserved size="1" attr="unneed">00</reserved>
+                    <paylen size="2" attr="len">0008</paylen>
+                    <transtype size="1" attr="bin">02</transtype>
+                    <reserved size="1" attr="unneed">00</reserved>
+                    <transid size="2" attr="bin">0007</transid>
                 </transform>
                 <!--
                 <transform>
@@ -81,12 +81,12 @@
                 -->
                 <transform>
                     <!-- Integrity Algorithm: AUTH_HMAC_SHA2_512_256 (14) -->
-                    <last size="1">03</last>
-                    <reserved size="1">00</reserved>
-                    <paylen size="2">0008</paylen>
-                    <transtype size="1">03</transtype>
-                    <reserved size="1">00</reserved>
-                    <transid size="2">000e</transid>
+                    <last size="1" attr="bin">03</last>
+                    <reserved size="1" attr="unneed">00</reserved>
+                    <paylen size="2" attr="len">0008</paylen>
+                    <transtype size="1" attr="bin">03</transtype>
+                    <reserved size="1" attr="unneed">00</reserved>
+                    <transid size="2" attr="bin">000e</transid>
                 </transform>
                 <!--
                 <transform>
@@ -108,36 +108,36 @@
                 -->
                 <transform>
                     <!-- DH Group: 2048 bit MODP group (14) -->
-                    <last size="1">00</last>
-                    <reserved size="1">00</reserved>
-                    <paylen size="2">0008</paylen>
-                    <transtype size="1">04</transtype>
-                    <reserved size="1">00</reserved>
-                    <transid size="2">000e</transid>
+                    <last size="1" attr="bin">00</last>
+                    <reserved size="1" attr="unneed">00</reserved>
+                    <paylen size="2" attr="len">0008</paylen>
+                    <transtype size="1" attr="bin">04</transtype>
+                    <reserved size="1" attr="unneed">00</reserved>
+                    <transid size="2" attr="bin">000e</transid>
                 </transform>
             </proposal>
         </data>
     </payload_sa>
     <payload_ke>
         <p_header>
-            <n_payld size="1">28</n_payld>
-            <flag size="1">00</flag>
-            <payld_len size="2">null</payld_len>
+            <n_payld size="1" attr="bin">28</n_payld>
+            <flag size="1" attr="bin">00</flag>
+            <payld_len size="2" attr="len">null</payld_len>
         </p_header>
         <data>
-            <dhgroup size="2">000e</dhgroup>
-            <reserved size="2">0000</reserved>
-            <ke_data size="256">null</ke_data>
+            <dhgroup size="2" attr="bin">000e</dhgroup>
+            <reserved size="2" attr="unneed">0000</reserved>
+            <ke_data size="256" attr="unneed">null</ke_data>
         </data>
     </payload_ke>
     <payload_nc>
         <p_header>
-            <n_payld size="1">00</n_payld>
-            <flag size="1">00</flag>
-            <payld_len size="2">null</payld_len>
+            <n_payld size="1" attr="bin">00</n_payld>
+            <flag size="1" attr="bin">00</flag>
+            <payld_len size="2" attr="len">null</payld_len>
         </p_header>
         <data>
-            <nc_data size="32">null</nc_data>
+            <nc_data size="32" attr="unneed">null</nc_data>
         </data>
     </payload_nc>
 </ike_init_sa>

@@ -10,9 +10,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import net.automatalib.visualization.Visualization;
@@ -40,6 +40,8 @@ public class TestMain {
 
         test();
         //calc();
+
+        //calcRSADigest();
 
 
         //client.reset();
@@ -82,6 +84,7 @@ public class TestMain {
 
     }
 
+
     /*
     public static void test(IKEv2Client client) throws IOException {
         String ret;
@@ -94,6 +97,33 @@ public class TestMain {
     }
 
      */
+
+    public static void calcRSADigest() throws Exception {
+        KeyPair keyPair = generatorRsaKey();
+        Signature signature = Signature.getInstance("MD5withRSA");
+        signature.initSign(keyPair.getPrivate());
+        //加解密数据
+        byte[] data = "hello world".getBytes();
+        //数据签名
+        signature.update(data);
+        byte[] digest = signature.sign();
+        System.out.println("Digest: " + DataUtils.bytesToHexStr(digest));
+        //数据解密加验证
+        signature.initVerify(keyPair.getPublic());
+        signature.update(data);
+        System.out.println("验证结果:"+signature.verify(digest));
+    }
+
+    public static KeyPair generatorRsaKey() throws Exception {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(new byte[1024]);
+        keyGen.initialize(1024,random);
+        KeyPair keyPair = keyGen.genKeyPair();
+        System.out.println(keyPair.getPrivate());
+        System.out.println(keyPair.getPublic());
+        return keyPair;
+    }
 
     public static void calc(){
         byte[] sKeySeed = DataUtils.hexStrToBytes("45176cfc6ed05876eefb589beb0669c8c67fa576e5be2528668ff3a8cbcec9cb2b09492df056d963e6ecd76ec1b72e4d1aca0198ff012f2fbafbb994c02137ed");
@@ -196,8 +226,11 @@ public class TestMain {
         //ret = client.saInitWithAcceptedSa();
         //logger.debug("ret: " + ret);
 
-        ret = client.authWithPsk();
+        //ret = client.authWithPsk();
         //logger.debug("ret: " + ret);
+
+        //client.authWithCert();
+        client.authWithCertHttp();
 
         ret = client.rekeyChildSaWithCurIkeSa();
         //System.out.println("ret: " + ret);
@@ -205,6 +238,8 @@ public class TestMain {
         client.rekeyIkeSa();
 
         client.rekeyChildSaWithOldIkeSa();
+
+        //client.emptyInfoCurResp();
 
         //client.rekeyChildSaWithCurIkeSa();
 
@@ -229,110 +264,5 @@ public class TestMain {
 
     }
 
-
-
-    public static void test5(IKEv2Client client){
-        String ret;
-
-        ret = client.saInitWithAcceptedSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.authWithPsk();
-        System.out.println("ret: " + ret);
-
-        ret = client.delCurIkeSa();
-        System.out.println("ret: " + ret);
-
-
-    }
-
-    public static void test4(IKEv2Client client){
-        String ret;
-
-        ret = client.saInitWithAcceptedSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.authWithPsk();
-        System.out.println("ret: " + ret);
-
-        ret = client.rekeyIkeSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.delOldIkeSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.delCurIkeSa();
-        System.out.println("ret: " + ret);
-
-
-    }
-
-    public static void test3(IKEv2Client client){
-        String ret;
-
-        ret = client.saInitWithAcceptedSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.authWithPsk();
-        System.out.println("ret: " + ret);
-
-        // Rekey IKE SA
-        ret = client.rekeyIkeSa();
-        System.out.println("ret: " + ret);
-
-        // Use New IKE SA (before deletion) to rekey child SA
-        // Child SA 继承于旧的SA，但是未删除之前是否能够使用？
-        ret = client.rekeyChildSaWithCurIkeSa();
-        System.out.println("ret: " + ret);
-    }
-
-    public static void test2(IKEv2Client client){
-        String ret;
-
-        ret = client.saInitWithAcceptedSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.authWithPsk();
-        System.out.println("ret: " + ret);
-
-        ret = client.rekeyChildSaWithCurIkeSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.delOldChildSaWithCurIkeSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.delCurIkeSa();
-        System.out.println("ret: " + ret);
-    }
-
-    public static void test1(IKEv2Client client){
-        String ret;
-
-        ret = client.saInitWithAcceptedSa();
-        System.out.println("ret: " + ret);
-
-        ret = client.authWithPsk();
-        System.out.println("ret: " + ret);
-
-        // rekey IKE SA
-        ret = client.rekeyIkeSa();
-        System.out.println("ret: " + ret);
-
-        // rekey Child SA over Old IKE SA
-        ret = client.rekeyChildSaWithOldIkeSa();
-        System.out.println("ret: " + ret);
-
-        // delete Child SA over Old IKE SA
-        ret = client.delOldChildSaWithOldIkeSa();
-        System.out.println("ret: " + ret);
-
-        // delete Old IKE SA
-        ret = client.delOldIkeSa();
-        System.out.println("ret: " + ret);
-
-        // delete Current IKE SA
-        ret = client.delCurIkeSa();
-        System.out.println("ret: " + ret);
-    }
 
 }

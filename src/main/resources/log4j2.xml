@@ -25,7 +25,7 @@
             &lt;!&ndash; 保留最近10份 &ndash;&gt;
             <DefaultRolloverStrategy max="10" />
         </RollingFile>-->
-        <File name="logfile" fileName="./learn.log">
+        <File name="logfile" fileName="./learn.log" append="false">
             <PatternLayout pattern="${log.pattern}" />
         </File>
     </Appenders>

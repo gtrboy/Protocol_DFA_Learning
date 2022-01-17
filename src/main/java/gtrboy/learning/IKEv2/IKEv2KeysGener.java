@@ -2,7 +2,7 @@ package gtrboy.learning.IKEv2;
 
 import gtrboy.learning.utils.BigIntegerUtils;
 import gtrboy.learning.utils.DataUtils;
-import gtrboy.learning.utils.LogUtils;
+import org.apache.commons.net.util.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,17 +13,20 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.crypto.Data;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 
 import javax.crypto.spec.IvParameterSpec;
-import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 
 /*   Algo    key_len     IV_len( = block_size)
@@ -454,7 +457,7 @@ public class IKEv2KeysGener {
      * RestOfInitIDPayload = IDType | RESERVED | InitIDData
      * AUTH = prf( prf(Shared Secret, "Key Pad for IKEv2"), <InitiatorSignedOctets>)
      * */
-    public byte[] calcAuth(byte[] iInitSaPkt, byte[] rNonce, byte[] initIDPayload){
+    public byte[] calcAuth(IKEv2AuthType method, byte[] iInitSaPkt, byte[] rNonce, byte[] initIDPayload){
         //byte[] skPi = keysGenerator.getSkPi();
         int macLen = skPi.length;
         byte[] macedIDForIBuf;
@@ -464,8 +467,20 @@ public class IKEv2KeysGener {
         try{
             macedIDForIBuf = getMacDigest(skPi, initIDPayload, prfFunc);
             initSignedOctetsBuf.put(iInitSaPkt).put(rNonce).put(macedIDForIBuf);
-            byte[] tmpKey = getMacDigest(_psk.getBytes(), KEY_PAD.getBytes(), prfFunc);
-            authData = getMacDigest(tmpKey, initSignedOctetsBuf.array(), prfFunc);
+            switch (method){
+                case PSK:
+                    byte[] tmpKey = getMacDigest(_psk.getBytes(), KEY_PAD.getBytes(), prfFunc);
+                    authData = getMacDigest(tmpKey, initSignedOctetsBuf.array(), prfFunc);
+                    break;
+                case CERT:
+                    //authData = getMacDigest(skPi, initSignedOctetsBuf.array(), prfFunc);
+                    authData = getCertSign(initSignedOctetsBuf.array());
+                    break;
+                default:
+                    LOGGER.error("Invalid Authentication Method!");
+                    System.exit(-1);
+            }
+
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -477,6 +492,45 @@ public class IKEv2KeysGener {
         //LOGGER.debug("_psk: " + keysGenerator.get_psk());
         return authData;
     }
+
+    private String getKey(String certFile) throws IOException {
+        // Read key from file
+        String strKeyPEM = "";
+        InputStream certStream = this.getClass().getClassLoader().getResourceAsStream("IKEv2/certificates/" + certFile);
+        BufferedReader br = new BufferedReader(new InputStreamReader(certStream));
+        String line;
+        while ((line = br.readLine()) != null) {
+            strKeyPEM += line + "\n";
+        }
+        br.close();
+        return strKeyPEM;
+    }
+
+    public RSAPrivateKey getPrivateKey(String filename) throws IOException, GeneralSecurityException {
+        String privateKeyPEM = getKey(filename);
+        return getPrivateKeyFromString(privateKeyPEM);
+    }
+
+    public RSAPrivateKey getPrivateKeyFromString(String key) throws IOException, GeneralSecurityException {
+        String privateKeyPEM = key;
+        privateKeyPEM = privateKeyPEM.replace("-----BEGIN PRIVATE KEY-----\n", "");
+        privateKeyPEM = privateKeyPEM.replace("-----END PRIVATE KEY-----", "");
+        byte[] encoded = Base64.decodeBase64(privateKeyPEM);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
+        RSAPrivateKey privKey = (RSAPrivateKey) kf.generatePrivate(keySpec);
+        return privKey;
+    }
+
+    private byte[] getCertSign(byte[] dataToSign) throws Exception{
+        RSAPrivateKey privateKey = getPrivateKey("private_pkcs8.pem");
+        Signature sign = Signature.getInstance("MD5withRSA");
+        sign.initSign(privateKey);
+        sign.update(dataToSign);
+        return sign.sign();
+    }
+
+
 
     public boolean isKeysPrepared(){
         if(skAi!=null && skAr!=null && skEi!=null && skEr!=null && skPi!=null && skPr!=null && skD!=null){

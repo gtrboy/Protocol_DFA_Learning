@@ -270,14 +270,46 @@ public class IKEv2Client extends IKEv2{
     }
 
     public String authWithPsk(){
+        String retStr = authExchange(IKEv2AuthType.PSK, "ike_auth_psk.xml");
+        LOGGER.info("authWithPsk, RET: " + retStr);
+        return retStr;
+    }
+
+    public String authWithCert(){
+        String retStr = authExchange(IKEv2AuthType.CERT, "ike_auth_cert.xml");
+        LOGGER.info("authWithCert, RET: " + retStr);
+        return retStr;
+    }
+
+    public String authWithCertHttp(){
+        String retStr = authExchange(IKEv2AuthType.CERT, "ike_auth_cert_http.xml");
+        LOGGER.info("authWithCertHttp, RET: " + retStr);
+        return retStr;
+    }
+
+    private String authExchange(IKEv2AuthType type, String xmlFile){
         String retStr = null;
         if(g_iSpi ==null || g_rSpi ==null ){
             retStr = ERROR;
         }else {
             byte[] i_child_spi = DataUtils.genRandomBytes(IPSEC_SPI_LEN);
-            PktIKEAuthPSK pkt = new PktIKEAuthPSK(g_sulName + "/ike_auth_psk.xml", g_iSpi, g_rSpi, g_curMsgId,
-                    g_curKeyGen, g_rNonce, g_iInitSaPkt, g_localAddr, i_child_spi);
-            byte[] pktBytes = pkt.getPacketBytes();
+            byte[] pktBytes = null;
+            switch (type){
+                case PSK:
+                    PktIKEAuthPSK pktPsk = new PktIKEAuthPSK(g_sulName + "/" + xmlFile, g_iSpi, g_rSpi, g_curMsgId,
+                            g_curKeyGen, g_rNonce, g_iInitSaPkt, g_localAddr, i_child_spi);
+                    pktBytes = pktPsk.getPacketBytes();
+                    break;
+                case CERT:
+                    PktIKEAuthCert pktCert = new PktIKEAuthCert(g_sulName + "/" + xmlFile, g_iSpi, g_rSpi, g_curMsgId,
+                            g_curKeyGen, g_rNonce, g_iInitSaPkt, g_localAddr, i_child_spi);
+                    pktBytes = pktCert.getPacketBytes();
+                    break;
+                default:
+                    LOGGER.error("Invalid Authentication Type!");
+                    System.exit(-1);
+            }
+
 
             beginBufferedOps();
             int round = g_RetryNum;
@@ -324,7 +356,6 @@ public class IKEv2Client extends IKEv2{
             endBufferedOps();
         }
 
-        LOGGER.info("authWithPsk, RET: " + retStr);
         return retStr;
     }
 
@@ -870,115 +901,484 @@ public class IKEv2Client extends IKEv2{
 
     /* Others */
 
-    public String emptyEncInfo(){
+    public String emptyEncInfoCur(){
         String retStr = null;
-        PktInfoEncEmpty pkt = new PktInfoEncEmpty(g_sulName + "/info_enc_empty.xml", g_iSpi, g_rSpi, g_curMsgId, g_curKeyGen);
-        byte[] pktBytes = pkt.getPacketBytes();
+        if(g_iSpi == null || g_rSpi == null){
+            retStr = ERROR;
+        }else {
+            PktInfoEncEmpty pkt = new PktInfoEncEmpty(g_sulName + "/info_enc_empty.xml", g_iSpi, g_rSpi, g_curMsgId, g_curKeyGen);
+            byte[] pktBytes = pkt.getPacketBytes();
 
-        beginBufferedOps();
-        int round = g_RetryNum;
-        while(round>=0){
-            try{
-                //send(pktBytes);
-                bufferedSend(pktBytes, g_peerAddr, g_port);
-                g_wantedMsgId = g_curMsgId;
-            } catch (IOException e) {
-                LOGGER.error("Send UDP packet Error!");
-                e.printStackTrace();
-            }
-            try {
-                IKEv2Parser parser= bufferedReceive(g_curKeyGen);
-                switch (parser.getType()){
-                    case IKEv2Parser.INIT:
-                        IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
-                        retStr = initParser.parsePacket();
-                        break;
-                    case IKEv2Parser.AUTH:
-                        IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
-                        retStr = authParser.parsePacket();
-                        break;
-                    case IKEv2Parser.CCSA:
-                        IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
-                        retStr = ccsaParser.parsePacket();
-                        break;
-                    case IKEv2Parser.INFO:
-                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
-                        retStr = infoParser.parsePacket();
-                        break;
-                    default:
-                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
-                        System.exit(-1);
+            beginBufferedOps();
+            int round = g_RetryNum;
+            while (round >= 0) {
+                try {
+                    //send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
+                    g_wantedMsgId = g_curMsgId;
+                } catch (IOException e) {
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
                 }
-                addMsgId(true);
-                break;
-            } catch (SocketTimeoutException e){
-                retStr = TIMEOUT;
-                round--;
-                //LOGGER.debug("Timeout in IKE_INIT_SA!");
-            } catch (IOException e){
-                LOGGER.error("UDP receive packet error! ");
-                e.printStackTrace();
+                try {
+                    IKEv2Parser parser = bufferedReceive(g_curKeyGen);
+                    switch (parser.getType()) {
+                        case IKEv2Parser.INIT:
+                            IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                            retStr = initParser.parsePacket();
+                            break;
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            break;
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
+                    }
+                    addMsgId(true);
+                    break;
+                } catch (SocketTimeoutException e) {
+                    retStr = TIMEOUT;
+                    round--;
+                    //LOGGER.debug("Timeout in IKE_INIT_SA!");
+                } catch (IOException e) {
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
+                }
             }
+            endBufferedOps();
         }
-        endBufferedOps();
 
-        LOGGER.info("emptyEncInfo, RET: " + retStr);
+        LOGGER.info("emptyEncInfoCur, RET: " + retStr);
         return retStr;
     }
 
-    public String emptyInfo(){
+    public String emptyInfoCur(){
         String retStr = null;
-        PktInfoEmpty pkt = new PktInfoEmpty(g_sulName + "/info_empty.xml", g_iSpi, g_rSpi, g_curMsgId);
-        byte[] pktBytes = pkt.getPacketBytes();
+        if(g_iSpi == null || g_rSpi == null){
+            retStr = ERROR;
+        }else {
+            PktInfoEmpty pkt = new PktInfoEmpty(g_sulName + "/info_empty.xml", g_iSpi, g_rSpi, g_curMsgId);
+            byte[] pktBytes = pkt.getPacketBytes();
 
-        beginBufferedOps();
-        int round = g_RetryNum;
-        while(round>=0){
-            try{
-                //send(pktBytes);
-                bufferedSend(pktBytes, g_peerAddr, g_port);
-                g_wantedMsgId = g_curMsgId;
-            } catch (IOException e) {
-                LOGGER.error("Send UDP packet Error!");
-                e.printStackTrace();
-            }
-            try {
-                IKEv2Parser parser= bufferedReceive(null);
-                switch (parser.getType()){
-                    case IKEv2Parser.INIT:
-                        IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
-                        retStr = initParser.parsePacket();
-                        break;
-                    case IKEv2Parser.AUTH:
-                        IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
-                        retStr = authParser.parsePacket();
-                        break;
-                    case IKEv2Parser.CCSA:
-                        IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
-                        retStr = ccsaParser.parsePacket();
-                        break;
-                    case IKEv2Parser.INFO:
-                        IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
-                        retStr = infoParser.parsePacket();
-                        break;
-                    default:
-                        LOGGER.error("Receive invalid exchange type: " + parser.getType());
-                        System.exit(-1);
+            beginBufferedOps();
+            int round = g_RetryNum;
+            while (round >= 0) {
+                try {
+                    //send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
+                    g_wantedMsgId = g_curMsgId;
+                } catch (IOException e) {
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
                 }
-                addMsgId(true);
-                break;
-            } catch (SocketTimeoutException e){
-                retStr = TIMEOUT;
-                round--;
-                //LOGGER.debug("Timeout in IKE_INIT_SA!");
-            } catch (IOException e){
-                LOGGER.error("UDP receive packet error! ");
-                e.printStackTrace();
+                try {
+                    IKEv2Parser parser = bufferedReceive(null);
+                    switch (parser.getType()) {
+                        case IKEv2Parser.INIT:
+                            IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                            retStr = initParser.parsePacket();
+                            break;
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            break;
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
+                    }
+                    addMsgId(true);
+                    break;
+                } catch (SocketTimeoutException e) {
+                    retStr = TIMEOUT;
+                    round--;
+                    //LOGGER.debug("Timeout in IKE_INIT_SA!");
+                } catch (IOException e) {
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
+                }
             }
+            endBufferedOps();
         }
-        endBufferedOps();
 
-        LOGGER.info("emptyEncInfo, RET: " + retStr);
+        LOGGER.info("emptyInfoCur, RET: " + retStr);
+        return retStr;
+    }
+
+    public String emptyEncInfoOld(){
+        String retStr = null;
+        if(g_iOldSpi == null || g_rOldSpi == null){
+            retStr = ERROR;
+        }else {
+            PktInfoEncEmpty pkt = new PktInfoEncEmpty(g_sulName + "/info_enc_empty.xml", g_iOldSpi, g_rOldSpi, g_oldMsgId, g_oldKeyGen);
+            byte[] pktBytes = pkt.getPacketBytes();
+
+            beginBufferedOps();
+            int round = g_RetryNum;
+            while (round >= 0) {
+                try {
+                    //send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
+                    g_wantedMsgId = g_oldMsgId;
+                } catch (IOException e) {
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
+                }
+                try {
+                    IKEv2Parser parser = bufferedReceive(g_oldKeyGen);
+                    switch (parser.getType()) {
+                        case IKEv2Parser.INIT:
+                            IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                            retStr = initParser.parsePacket();
+                            break;
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            break;
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
+                    }
+                    addMsgId(true);
+                    break;
+                } catch (SocketTimeoutException e) {
+                    retStr = TIMEOUT;
+                    round--;
+                    //LOGGER.debug("Timeout in IKE_INIT_SA!");
+                } catch (IOException e) {
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
+                }
+            }
+            endBufferedOps();
+        }
+
+        LOGGER.info("emptyEncInfoOld, RET: " + retStr);
+        return retStr;
+    }
+
+    public String emptyInfoOld(){
+        String retStr = null;
+        if(g_iOldSpi == null || g_rOldSpi == null){
+            retStr = ERROR;
+        }else {
+            PktInfoEmpty pkt = new PktInfoEmpty(g_sulName + "/info_empty.xml", g_iOldSpi, g_rOldSpi, g_oldMsgId);
+            byte[] pktBytes = pkt.getPacketBytes();
+
+            beginBufferedOps();
+            int round = g_RetryNum;
+            while (round >= 0) {
+                try {
+                    //send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
+                    g_wantedMsgId = g_oldMsgId;
+                } catch (IOException e) {
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
+                }
+                try {
+                    IKEv2Parser parser = bufferedReceive(null);
+                    switch (parser.getType()) {
+                        case IKEv2Parser.INIT:
+                            IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                            retStr = initParser.parsePacket();
+                            break;
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            break;
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
+                    }
+                    addMsgId(true);
+                    break;
+                } catch (SocketTimeoutException e) {
+                    retStr = TIMEOUT;
+                    round--;
+                    //LOGGER.debug("Timeout in IKE_INIT_SA!");
+                } catch (IOException e) {
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
+                }
+            }
+            endBufferedOps();
+        }
+
+        LOGGER.info("emptyInfoOld, RET: " + retStr);
+        return retStr;
+    }
+
+    /* Response */
+    public String emptyEncInfoCurResp(){
+        String retStr = null;
+        if(g_iSpi == null || g_rSpi == null){
+            retStr = ERROR;
+        }else {
+            PktInfoEncEmpty pkt = new PktInfoEncEmpty(g_sulName + "/info_enc_empty_resp.xml", g_rSpi, g_iSpi, g_curMsgId, g_curKeyGen);
+            byte[] pktBytes = pkt.getPacketBytes();
+
+            beginBufferedOps();
+            int round = g_RetryNum;
+            while (round >= 0) {
+                try {
+                    //send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
+                    g_wantedMsgId = g_curMsgId;
+                } catch (IOException e) {
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
+                }
+                try {
+                    IKEv2Parser parser = bufferedReceive(g_curKeyGen);
+                    switch (parser.getType()) {
+                        case IKEv2Parser.INIT:
+                            IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                            retStr = initParser.parsePacket();
+                            break;
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            break;
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
+                    }
+                    addMsgId(true);
+                    break;
+                } catch (SocketTimeoutException e) {
+                    retStr = TIMEOUT;
+                    round--;
+                    //LOGGER.debug("Timeout in IKE_INIT_SA!");
+                } catch (IOException e) {
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
+                }
+            }
+            endBufferedOps();
+        }
+
+        LOGGER.info("emptyEncInfoCurResp RET: " + retStr);
+        return retStr;
+    }
+
+    public String emptyInfoCurResp(){
+        String retStr = null;
+        if(g_iSpi == null || g_rSpi == null){
+            retStr = ERROR;
+        }else {
+            PktInfoEmpty pkt = new PktInfoEmpty(g_sulName + "/info_empty_resp.xml", g_rSpi, g_iSpi, g_curMsgId);
+            byte[] pktBytes = pkt.getPacketBytes();
+
+            beginBufferedOps();
+            int round = g_RetryNum;
+            while (round >= 0) {
+                try {
+                    //send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
+                    g_wantedMsgId = g_curMsgId;
+                } catch (IOException e) {
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
+                }
+                try {
+                    IKEv2Parser parser = bufferedReceive(null);
+                    switch (parser.getType()) {
+                        case IKEv2Parser.INIT:
+                            IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                            retStr = initParser.parsePacket();
+                            break;
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            break;
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
+                    }
+                    addMsgId(true);
+                    break;
+                } catch (SocketTimeoutException e) {
+                    retStr = TIMEOUT;
+                    round--;
+                    //LOGGER.debug("Timeout in IKE_INIT_SA!");
+                } catch (IOException e) {
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
+                }
+            }
+            endBufferedOps();
+        }
+
+        LOGGER.info("emptyInfoCurResp, RET: " + retStr);
+        return retStr;
+    }
+
+    public String emptyEncInfoOldResp(){
+        String retStr = null;
+        if(g_iOldSpi == null || g_rOldSpi == null){
+            retStr = ERROR;
+        }else {
+            PktInfoEncEmpty pkt = new PktInfoEncEmpty(g_sulName + "/info_enc_empty_resp.xml", g_rOldSpi, g_iOldSpi, g_oldMsgId, g_oldKeyGen);
+            byte[] pktBytes = pkt.getPacketBytes();
+
+            beginBufferedOps();
+            int round = g_RetryNum;
+            while (round >= 0) {
+                try {
+                    //send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
+                    g_wantedMsgId = g_oldMsgId;
+                } catch (IOException e) {
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
+                }
+                try {
+                    IKEv2Parser parser = bufferedReceive(g_oldKeyGen);
+                    switch (parser.getType()) {
+                        case IKEv2Parser.INIT:
+                            IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                            retStr = initParser.parsePacket();
+                            break;
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            break;
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
+                    }
+                    addMsgId(true);
+                    break;
+                } catch (SocketTimeoutException e) {
+                    retStr = TIMEOUT;
+                    round--;
+                    //LOGGER.debug("Timeout in IKE_INIT_SA!");
+                } catch (IOException e) {
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
+                }
+            }
+            endBufferedOps();
+        }
+
+        LOGGER.info("emptyEncInfoOldResp, RET: " + retStr);
+        return retStr;
+    }
+
+    public String emptyInfoOldResp(){
+        String retStr = null;
+        if(g_iOldSpi == null || g_rOldSpi == null){
+            retStr = ERROR;
+        }else {
+            PktInfoEmpty pkt = new PktInfoEmpty(g_sulName + "/info_empty_resp.xml", g_rOldSpi, g_iOldSpi, g_oldMsgId);
+            byte[] pktBytes = pkt.getPacketBytes();
+
+            beginBufferedOps();
+            int round = g_RetryNum;
+            while (round >= 0) {
+                try {
+                    //send(pktBytes);
+                    bufferedSend(pktBytes, g_peerAddr, g_port);
+                    g_wantedMsgId = g_oldMsgId;
+                } catch (IOException e) {
+                    LOGGER.error("Send UDP packet Error!");
+                    e.printStackTrace();
+                }
+                try {
+                    IKEv2Parser parser = bufferedReceive(null);
+                    switch (parser.getType()) {
+                        case IKEv2Parser.INIT:
+                            IKEv2SaInitParser initParser = (IKEv2SaInitParser) parser;
+                            retStr = initParser.parsePacket();
+                            break;
+                        case IKEv2Parser.AUTH:
+                            IKEv2AuthParser authParser = (IKEv2AuthParser) parser;
+                            retStr = authParser.parsePacket();
+                            break;
+                        case IKEv2Parser.CCSA:
+                            IKEv2CreChSaParser ccsaParser = (IKEv2CreChSaParser) parser;
+                            retStr = ccsaParser.parsePacket();
+                            break;
+                        case IKEv2Parser.INFO:
+                            IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
+                            retStr = infoParser.parsePacket();
+                            break;
+                        default:
+                            LOGGER.error("Receive invalid exchange type: " + parser.getType());
+                            System.exit(-1);
+                    }
+                    addMsgId(true);
+                    break;
+                } catch (SocketTimeoutException e) {
+                    retStr = TIMEOUT;
+                    round--;
+                    //LOGGER.debug("Timeout in IKE_INIT_SA!");
+                } catch (IOException e) {
+                    LOGGER.error("UDP receive packet error! ");
+                    e.printStackTrace();
+                }
+            }
+            endBufferedOps();
+        }
+
+        LOGGER.info("emptyInfoOldResp, RET: " + retStr);
         return retStr;
     }
 

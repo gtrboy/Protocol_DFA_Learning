@@ -1,17 +1,18 @@
-<create_child_sa>
+<ike_auth>
     <ike_header>
         <initspi size="8">null</initspi>
         <respspi size="8">null</respspi>
         <nextpld size="1">2e</nextpld>
         <version size="1">20</version>
-        <exch_type size="1">24</exch_type>
+        <exch_type size="1">23</exch_type>
         <flags size="1">08</flags>
         <msgid size="4">null</msgid>
         <length size="4">null</length>
     </ike_header>
     <payload_enc>
         <p_header>
-            <n_payld size="1">29</n_payld>
+            <!--identification-->
+            <n_payld size="1">23</n_payld>
             <flag size="1">00</flag>
             <payld_len size="2">null</payld_len>
         </p_header>
@@ -20,23 +21,49 @@
             <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
             <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
             <enc_data>
-                <payload_notify>
+                <payload_id>
+                    <p_header>
+                        <n_payld size="1">25</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <!-- type 1: IPV4_ADDR -->
+                        <id_type size="1">01</id_type>
+                        <reserved size="3">000000</reserved>
+                        <id_data size="4">null</id_data>
+                    </data>
+                </payload_id>
+                <payload_cert>
+                    <p_header>
+                        <n_payld size="1">27</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <!-- x.509 cert signature-->
+                        <cer_enc size="1">0c</cer_enc>
+                        <cert_hash size="20">bbac7578b22ac99cead011ed5135829d6b2c746b</cert_hash>
+                        <cert_url size="25">http://100.1.1.1/cert.der</cert_url>
+                    </data>
+                </payload_cert>
+                <payload_auth>
                     <p_header>
                         <n_payld size="1">21</n_payld>
                         <flag size="1">00</flag>
                         <payld_len size="2">null</payld_len>
                     </p_header>
                     <data>
-                        <protoid size="1">03</protoid>
-                        <spi_size size="1">04</spi_size>
-                        <!-- 16393: REKEY_SA -->
-                        <not_msg_type size="2">4009</not_msg_type>
-                        <spi size="4">null</spi>
+                        <!-- RSA Sig -->
+                        <auth_method size="1">01</auth_method>
+                        <reserved size="3">000000</reserved>
+                        <!-- 64 for PRF_HMAC_SHA2_512 -->
+                        <auth_data size="64">null</auth_data>
                     </data>
-                </payload_notify>
+                </payload_auth>
                 <payload_sa>
                     <p_header>
-                        <n_payld size="1">28</n_payld>
+                        <n_payld size="1">2c</n_payld>
                         <flag size="1">00</flag>
                         <payld_len size="2">null</payld_len>
                     </p_header>
@@ -82,18 +109,6 @@
                         </proposal>
                     </data>
                 </payload_sa>
-
-                <payload_nc>
-                    <p_header>
-                        <n_payld size="1">2c</n_payld>
-                        <flag size="1">00</flag>
-                        <payld_len size="2">null</payld_len>
-                    </p_header>
-                    <data>
-                        <nc_data size="20">null</nc_data>
-                    </data>
-                </payload_nc>
-
                 <payload_tsi>
                     <p_header>
                         <n_payld size="1">2d</n_payld>
@@ -113,13 +128,14 @@
                             <!-- TSr: 172.16.0.0 ~ 172.16.0.255 -->
                             <sta_addr size="4">ac100000</sta_addr>
                             <end_addr size="4">ac1000ff</end_addr>
+
                         </ts>
                     </data>
                 </payload_tsi>
                 <payload_tsr>
                     <p_header>
                         <!-- Notify -->
-                        <n_payld size="1">00</n_payld>
+                        <n_payld size="1">29</n_payld>
                         <flag size="1">00</flag>
                         <payld_len size="2">null</payld_len>
                     </p_header>
@@ -139,9 +155,22 @@
                         </ts>
                     </data>
                 </payload_tsr>
+                <payload_notify>
+                    <p_header>
+                        <n_payld size="1">00</n_payld>
+                        <flag size="1">00</flag>
+                        <payld_len size="2">null</payld_len>
+                    </p_header>
+                    <data>
+                        <protoid size="1">01</protoid>
+                        <spi_size size="1">00</spi_size>
+                        <!-- INITIAL_CONTACT -->
+                        <not_msg_type size="2">4000</not_msg_type>
+                    </data>
+                </payload_notify>
             </enc_data>
             <!-- The size of the checksum should be changed if the integrity algorithm been changed. -->
             <checksum size="32">null</checksum>
         </data>
     </payload_enc>
-</create_child_sa>
+</ike_auth>
