@@ -28,7 +28,9 @@ public class IKEv2Client extends IKEv2{
     private final int g_dhGrp;
     private final String g_encAlg;
     private final String g_hmacAlg;
-    private final String g_psk;
+    private String g_psk = null;
+    private String g_rsaSignAlgo = null;
+    private String g_privateKey = null;
     private final int nonce_len;
 
 
@@ -77,13 +79,26 @@ public class IKEv2Client extends IKEv2{
         g_dhGrp = config.getDhGroup();
         g_encAlg = config.getEncFunc();
         g_hmacAlg = config.getHmacFunc();
-        g_psk = config.getPsk();
         nonce_len = config.getNonceLen();
 
         telnetUserName = config.getTelUser();
         telnetPassword = config.getTelPass();
         g_telnetClient = new TelnetMain(g_peerAddr, telnetUserName, telnetPassword, g_sulName);
         g_telnetClient.connect();
+
+        String authType = config.getAuthType();
+        switch (authType){
+            case "psk":
+                g_psk = config.getPsk();
+                break;
+            case "cert_http":
+                g_rsaSignAlgo = config.getRsaSignAlgo();
+                g_privateKey = config.getPrivateKey();
+                break;
+            default:
+                LOGGER.error("Invalid Authentication Type! ");
+                System.exit(-1);
+        }
 
     }
 
@@ -302,7 +317,7 @@ public class IKEv2Client extends IKEv2{
                     break;
                 case CERT:
                     PktIKEAuthCert pktCert = new PktIKEAuthCert(g_sulName + "/" + xmlFile, g_iSpi, g_rSpi, g_curMsgId,
-                            g_curKeyGen, g_rNonce, g_iInitSaPkt, g_localAddr, i_child_spi);
+                            g_curKeyGen, g_rNonce, g_iInitSaPkt, g_localAddr, i_child_spi, g_rsaSignAlgo, g_privateKey);
                     pktBytes = pktCert.getPacketBytes();
                     break;
                 default:

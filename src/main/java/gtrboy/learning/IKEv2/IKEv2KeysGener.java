@@ -457,7 +457,7 @@ public class IKEv2KeysGener {
      * RestOfInitIDPayload = IDType | RESERVED | InitIDData
      * AUTH = prf( prf(Shared Secret, "Key Pad for IKEv2"), <InitiatorSignedOctets>)
      * */
-    public byte[] calcAuth(IKEv2AuthType method, byte[] iInitSaPkt, byte[] rNonce, byte[] initIDPayload){
+    public byte[] calcAuthPsk(byte[] iInitSaPkt, byte[] rNonce, byte[] initIDPayload){
         //byte[] skPi = keysGenerator.getSkPi();
         int macLen = skPi.length;
         byte[] macedIDForIBuf;
@@ -467,20 +467,8 @@ public class IKEv2KeysGener {
         try{
             macedIDForIBuf = getMacDigest(skPi, initIDPayload, prfFunc);
             initSignedOctetsBuf.put(iInitSaPkt).put(rNonce).put(macedIDForIBuf);
-            switch (method){
-                case PSK:
-                    byte[] tmpKey = getMacDigest(_psk.getBytes(), KEY_PAD.getBytes(), prfFunc);
-                    authData = getMacDigest(tmpKey, initSignedOctetsBuf.array(), prfFunc);
-                    break;
-                case CERT:
-                    //authData = getMacDigest(skPi, initSignedOctetsBuf.array(), prfFunc);
-                    authData = getCertSign(initSignedOctetsBuf.array());
-                    break;
-                default:
-                    LOGGER.error("Invalid Authentication Method!");
-                    System.exit(-1);
-            }
-
+            byte[] tmpKey = getMacDigest(_psk.getBytes(), KEY_PAD.getBytes(), prfFunc);
+            authData = getMacDigest(tmpKey, initSignedOctetsBuf.array(), prfFunc);
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -492,6 +480,31 @@ public class IKEv2KeysGener {
         //LOGGER.debug("_psk: " + keysGenerator.get_psk());
         return authData;
     }
+
+    public byte[] calcAuthCert(byte[] iInitSaPkt, byte[] rNonce, byte[] initIDPayload, String privateKeyFile, String hashMethod){
+        //byte[] skPi = keysGenerator.getSkPi();
+        int macLen = skPi.length;
+        byte[] macedIDForIBuf;
+        byte[] authData = null;
+        String prfFunc = _hmacAlg;
+        ByteBuffer initSignedOctetsBuf = ByteBuffer.allocate(iInitSaPkt.length + rNonce.length + macLen);
+        try{
+            macedIDForIBuf = getMacDigest(skPi, initIDPayload, prfFunc);
+            initSignedOctetsBuf.put(iInitSaPkt).put(rNonce).put(macedIDForIBuf);
+            authData = getCertSign(initSignedOctetsBuf.array(), privateKeyFile, hashMethod);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+        //LOGGER.debug("INIT_SA Packet: " + DataUtils.bytesToHexStr(iInitSaPkt));
+        //LOGGER.debug("Response Nonce: " + DataUtils.bytesToHexStr(rNonce));
+        //LOGGER.debug("SK_pi: " + DataUtils.bytesToHexStr(keysGenerator.getSkPi()));
+        //LOGGER.debug("Init ID Payload: " + DataUtils.bytesToHexStr(initIDPayload));
+        //LOGGER.debug("_psk: " + keysGenerator.get_psk());
+        return authData;
+    }
+
+
 
     private String getKey(String certFile) throws IOException {
         // Read key from file
@@ -522,9 +535,9 @@ public class IKEv2KeysGener {
         return privKey;
     }
 
-    private byte[] getCertSign(byte[] dataToSign) throws Exception{
-        RSAPrivateKey privateKey = getPrivateKey("private_pkcs8.pem");
-        Signature sign = Signature.getInstance("MD5withRSA");
+    private byte[] getCertSign(byte[] dataToSign, String privateKeyFile, String hashMethod) throws Exception{
+        RSAPrivateKey privateKey = getPrivateKey(privateKeyFile);
+        Signature sign = Signature.getInstance(hashMethod);
         sign.initSign(privateKey);
         sign.update(dataToSign);
         return sign.sign();

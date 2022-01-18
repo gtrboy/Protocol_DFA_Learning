@@ -98,7 +98,7 @@ public class PktIKEAuthPSK extends PktIKEEnc{
             if(eleName.equals("auth_data")){
                 int authLen = Integer.parseInt(element.attribute("size").getText());
                 if(isEnc){
-                    bAos.writeBytes(keysGenerator.calcAuth(IKEv2AuthType.PSK, iInitSaPkt, rNonce, initIDPayload));
+                    bAos.writeBytes(keysGenerator.calcAuthPsk(iInitSaPkt, rNonce, initIDPayload));
                 }else{
                     bAos.writeBytes(DataUtils.genRandomBytes(authLen));
                 }

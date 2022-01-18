@@ -43,7 +43,7 @@
                     <data>
                         <!-- x.509 cert signature-->
                         <cer_enc size="1">0c</cer_enc>
-                        <cert_hash size="20">bbac7578b22ac99cead011ed5135829d6b2c746b</cert_hash>
+                        <cert_hash size="20">d09a6d8e432a733ceedf52e4993b88b521634b1e</cert_hash>
                         <cert_url size="25">http://100.1.1.1/cert.der</cert_url>
                     </data>
                 </payload_cert>
@@ -57,8 +57,8 @@
                         <!-- RSA Sig -->
                         <auth_method size="1">01</auth_method>
                         <reserved size="3">000000</reserved>
-                        <!-- 64 for PRF_HMAC_SHA2_512 -->
-                        <auth_data size="64">null</auth_data>
+                        <!-- RSA 1024 bit, 128 bytes -->
+                        <auth_data size="128">null</auth_data>
                     </data>
                 </payload_auth>
                 <payload_sa>

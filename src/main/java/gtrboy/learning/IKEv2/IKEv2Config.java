@@ -1,5 +1,8 @@
 package gtrboy.learning.IKEv2;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.*;
 import java.util.Properties;
 
@@ -12,7 +15,6 @@ public class IKEv2Config {
 
     private final String hmacFunc;   // integrity function
     private final String encFunc;    // encryption function
-    private final String psk;
     private final int dhGroup;
     private final int nonceLen;
 
@@ -20,6 +22,13 @@ public class IKEv2Config {
     private final String telnet_username;
     private final String telnet_password;
     private final String sul;
+
+    private final String auth_type;
+    private String rsa_sign_algo = null;
+    private String private_key = null;
+    private String psk = null;
+
+    private static final Logger LOGGER = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 
 
     public IKEv2Config(String fileName) throws IOException {
@@ -35,9 +44,22 @@ public class IKEv2Config {
 
         hmacFunc = props.getProperty("hmac_algo");
         encFunc = props.getProperty("enc_algo");
-        psk = props.getProperty("psk");
         dhGroup = Integer.parseInt(props.getProperty("dh_group"));
         nonceLen = Integer.parseInt(props.getProperty("nonce_len"));
+
+        auth_type = props.getProperty("auth_type");
+        switch (auth_type){
+            case "psk":
+                psk = props.getProperty("psk");
+                break;
+            case "cert_http":
+                rsa_sign_algo = props.getProperty("rsa_sign_algo");
+                private_key = props.getProperty("private_key");
+                break;
+            default:
+                LOGGER.error("Invalid Authentication Type! ");
+                System.exit(-1);
+        }
 
         telnet_username = props.getProperty("tel_user");
         telnet_password = props.getProperty("tel_pass");
@@ -85,6 +107,18 @@ public class IKEv2Config {
 
     public String getPsk(){
         return psk;
+    }
+
+    public String getRsaSignAlgo(){
+        return rsa_sign_algo;
+    }
+
+    public String getPrivateKey(){
+        return private_key;
+    }
+
+    public String getAuthType(){
+        return auth_type;
     }
 
     public String getEncFunc(){

@@ -19,9 +19,13 @@ public class PktIKEAuthCert extends PktIKEEnc{
     private byte[] initIDPayload = null;
     private byte[] ipsecSPI = null;
 
+    private final String rsaSignAlgo;
+    private final String privateKey;
+
 
     public PktIKEAuthCert(String patternFile, byte[] initspi, byte[] respspi, int msgid, IKEv2KeysGener keysGen,
-                         byte[] r_nonce, byte[] i_initsa_pkt, String local_address, byte[] ipsec_spi) {
+                         byte[] r_nonce, byte[] i_initsa_pkt, String local_address, byte[] ipsec_spi,
+                          String rsa_sign_algo, String private_key) {
         super(initspi, respspi, msgid, keysGen);
         rNonce = r_nonce;
         if(i_initsa_pkt!=null) {
@@ -32,6 +36,9 @@ public class PktIKEAuthCert extends PktIKEEnc{
         //keysGenerator = keysGen;
         localAddr = DataUtils.ipToBytes(local_address);
         ipsecSPI = ipsec_spi;
+
+        rsaSignAlgo = rsa_sign_algo;
+        privateKey = private_key;
 
         doConstruct(patternFile);
     }
@@ -127,7 +134,7 @@ public class PktIKEAuthCert extends PktIKEEnc{
             if(eleName.equals("auth_data")){
                 int authLen = Integer.parseInt(element.attribute("size").getText());
                 if(isEnc){
-                    byte[] authData = keysGenerator.calcAuth(IKEv2AuthType.CERT, iInitSaPkt, rNonce, initIDPayload);
+                    byte[] authData = keysGenerator.calcAuthCert(iInitSaPkt, rNonce, initIDPayload, privateKey, rsaSignAlgo);
                     bAos.writeBytes(authData);
                 }else{
                     bAos.writeBytes(DataUtils.genRandomBytes(authLen));
