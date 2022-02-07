@@ -18,7 +18,7 @@
         <data>
             <!-- Initialization Vector -->
             <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
-            <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
+            <inivec size="16">null</inivec>
             <enc_data size="8">0706050403020107</enc_data>
             <!-- The size of the checksum should be changed if the integrity algorithm been changed. -->
             <checksum size="32">null</checksum>

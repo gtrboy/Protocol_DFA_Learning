@@ -18,7 +18,7 @@
         <data>
             <!-- Initialization Vector -->
             <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
-            <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
+            <inivec size="16">null</inivec>
             <enc_data>
                 <payload_del>
                     <p_header>
@@ -30,7 +30,7 @@
                         <protoid size="1">03</protoid>
                         <spisize size="1">04</spisize>
                         <spinum size="2">0001</spinum>
-                        <spi size="4">null</spi>
+                        <oldspi size="4">null</oldspi>
                     </data>
                 </payload_del>
             </enc_data>

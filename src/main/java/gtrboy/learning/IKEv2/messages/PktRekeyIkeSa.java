@@ -95,7 +95,7 @@ public class PktRekeyIkeSa extends PktIKEEnc{
         for(Iterator it = hdrRoot.elementIterator(); it.hasNext();){
             Element element = (Element) it.next();
             String nodeName = element.getName();
-            if("paylen".equals(nodeName)){
+            if("proplen".equals(nodeName)){
                 bAos.writeBytes(DataUtils.shortToBytesB(propLen));
             }else if ("spi".equals(nodeName)){
                 bAos.writeBytes(newIkeSpi);

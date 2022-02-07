@@ -135,7 +135,7 @@ public class PktIKEInitSA extends PktIKE {
         ByteArrayOutputStream bAos = new ByteArrayOutputStream();
         for(Iterator itt = element.elementIterator(); itt.hasNext();){
             Element element1 = (Element) itt.next();
-            if(element1.getName().equals("paylen")){
+            if(element1.getName().equals("proplen")){
                 bAos.writeBytes(bPropLen);
             }else{
                 String text = element1.getText();

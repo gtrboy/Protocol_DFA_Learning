@@ -43,7 +43,7 @@ public class PktDelChildSa extends PktIKEEnc{
         for(Iterator it = pData.elementIterator(); it.hasNext();){
             Element element = (Element) it.next();
             String name = element.getName();
-            if("spi".equals(name)){
+            if("oldspi".equals(name)){
                 bAos.writeBytes(delSpi);
             }else{
                 String text = element.getText();

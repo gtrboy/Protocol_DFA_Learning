@@ -21,7 +21,7 @@
                 <prop_header>
                     <n_payld size="1" attr="bin">00</n_payld>
                     <resv size="1" attr="unneed">00</resv>
-                    <paylen size="2" attr="len">null</paylen>
+                    <proplen size="2" attr="len">null</proplen>
                     <prop_num size="1" attr="len">01</prop_num>
                     <protoid size="1" attr="bin">01</protoid>
                     <spisize size="1" attr="len">00</spisize>

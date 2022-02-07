@@ -18,7 +18,7 @@
         <data>
             <!-- Initialization Vector -->
             <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
-            <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
+            <inivec size="16">null</inivec>
             <enc_data>
                 <payload_sa>
                     <p_header>
@@ -32,7 +32,7 @@
                             <prop_header>
                                 <n_payld size="1">00</n_payld>
                                 <resv size="1">00</resv>
-                                <paylen size="2">null</paylen>
+                                <proplen size="2">null</proplen>
                                 <prop_num size="1">01</prop_num>
                                 <protoid size="1">01</protoid>
                                 <spisize size="1">08</spisize>
@@ -43,7 +43,7 @@
                                 <!-- Encryption Algorithm: ENCR_AES_CBC (12), Key Length:256 -->
                                 <last size="1">03</last>
                                 <reserved size="1">00</reserved>
-                                <paylen size="2">000c</paylen>
+                                <translen size="2">000c</translen>
                                 <transtype size="1">01</transtype>
                                 <reserved size="1">00</reserved>
                                 <transid size="2">000c</transid>
@@ -56,7 +56,7 @@
                                 <!-- PRF: PRF_HMAC_SHA2_512 (7) -->
                                 <last size="1">03</last>
                                 <reserved size="1">00</reserved>
-                                <paylen size="2">0008</paylen>
+                                <translen size="2">0008</translen>
                                 <transtype size="1">02</transtype>
                                 <reserved size="1">00</reserved>
                                 <transid size="2">0007</transid>
@@ -65,7 +65,7 @@
                                 <!-- Integrity Algorithm: AUTH_HMAC_SHA2_512_256 (14) -->
                                 <last size="1">03</last>
                                 <reserved size="1">00</reserved>
-                                <paylen size="2">0008</paylen>
+                                <translen size="2">0008</translen>
                                 <transtype size="1">03</transtype>
                                 <reserved size="1">00</reserved>
                                 <transid size="2">000e</transid>
@@ -74,7 +74,7 @@
                                 <!-- DH Group: 2048 bit MODP group (14) -->
                                 <last size="1">00</last>
                                 <reserved size="1">00</reserved>
-                                <paylen size="2">0008</paylen>
+                                <translen size="2">0008</translen>
                                 <transtype size="1">04</transtype>
                                 <reserved size="1">00</reserved>
                                 <transid size="2">000e</transid>

@@ -125,7 +125,7 @@ public class PktRekeyChildSa extends PktIKEEnc{
         for(Iterator itt = element.elementIterator(); itt.hasNext();){
             Element element1 = (Element) itt.next();
             switch (element1.getName()){
-                case "paylen":
+                case "proplen":
                     bAos.writeBytes(bPropLen);
                     break;
                 case "spi":
@@ -173,7 +173,7 @@ public class PktRekeyChildSa extends PktIKEEnc{
             Element element = (Element) it.next();
             String text = element.getText();
             String name = element.getName();
-            if("spi".equals(name)){
+            if("oldspi".equals(name)){
                 bAos.writeBytes(oldCldSpi);
             }else {
                 bAos.writeBytes(DataUtils.hexStrToBytes(text));

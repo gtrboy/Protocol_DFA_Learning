@@ -199,7 +199,7 @@ public class PktIKEAuthCert extends PktIKEEnc{
         for(Iterator itt = element.elementIterator(); itt.hasNext();){
             Element element1 = (Element) itt.next();
             switch (element1.getName()){
-                case "paylen":
+                case "proplen":
                     bAos.writeBytes(bPropLen);
                     break;
                 case "spi":

@@ -19,7 +19,7 @@
         <data>
             <!-- Initialization Vector -->
             <!-- The size of the IV should be changed if the integrity algorithm been changed. -->
-            <inivec size="16">a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0</inivec>
+            <inivec size="16">null</inivec>
             <enc_data>
                 <payload_id>
                     <p_header>
@@ -72,7 +72,7 @@
                             <prop_header>
                                 <n_payld size="1">00</n_payld>
                                 <resv size="1">00</resv>
-                                <paylen size="2">null</paylen>
+                                <proplen size="2">null</proplen>
                                 <prop_num size="1">01</prop_num>
                                 <!--ESP-->
                                 <protoid size="1">03</protoid>
@@ -83,7 +83,7 @@
                             <transform>
                                 <last size="1">03</last>
                                 <reserved size="1">00</reserved>
-                                <paylen size="2">0008</paylen>
+                                <translen size="2">0008</translen>
                                 <transtype size="1">01</transtype>
                                 <reserved size="1">00</reserved>
                                 <!-- ENCR_3DES -->
@@ -92,7 +92,7 @@
                             <transform>
                                 <last size="1">03</last>
                                 <reserved size="1">00</reserved>
-                                <paylen size="2">0008</paylen>
+                                <translen size="2">0008</translen>
                                 <transtype size="1">03</transtype>
                                 <reserved size="1">00</reserved>
                                 <!-- AUTH_HMAC_SHA2_256_128 -->
@@ -101,7 +101,7 @@
                             <transform>
                                 <last size="1">00</last>
                                 <reserved size="1">00</reserved>
-                                <paylen size="2">0008</paylen>
+                                <translen size="2">0008</translen>
                                 <transtype size="1">05</transtype>
                                 <reserved size="1">00</reserved>
                                 <transid size="2">0000</transid>
