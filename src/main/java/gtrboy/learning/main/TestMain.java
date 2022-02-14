@@ -230,14 +230,23 @@ public class TestMain {
         //logger.debug("ret: " + ret);
 
         //client.authWithCert();
-        client.authWithCertHttp();
+        //client.authWithCertHttp();
 
-        ret = client.rekeyChildSaWithCurIkeSa();
+        //ret = client.rekeyChildSaWithCurIkeSa();
         //System.out.println("ret: " + ret);
+        client.authWithPsk();
 
         client.rekeyIkeSa();
 
         client.rekeyChildSaWithOldIkeSa();
+
+        client.delCurChildSaWithCurIkeSa();
+
+        client.delOldChildSaWithCurIkeSa();
+
+        client.delCurIkeSa();
+
+        client.delOldIkeSa();
 
         //client.emptyInfoCurResp();
 

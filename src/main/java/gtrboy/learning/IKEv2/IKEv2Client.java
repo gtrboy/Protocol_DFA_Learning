@@ -673,7 +673,7 @@ public class IKEv2Client extends IKEv2{
                         case IKEv2Parser.INFO:
                             IKEv2InfoParser infoParser = (IKEv2InfoParser) parser;
                             retStr = infoParser.parsePacket();
-                            addMsgId(true);
+                            addMsgId(false);
                             break;
                         default:
                             LOGGER.error("Receive invalid exchange type: " + parser.getType());

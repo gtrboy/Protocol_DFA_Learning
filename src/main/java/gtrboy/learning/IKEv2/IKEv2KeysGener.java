@@ -472,12 +472,6 @@ public class IKEv2KeysGener {
         } catch (Exception e){
             e.printStackTrace();
         }
-
-        //LOGGER.debug("INIT_SA Packet: " + DataUtils.bytesToHexStr(iInitSaPkt));
-        //LOGGER.debug("Response Nonce: " + DataUtils.bytesToHexStr(rNonce));
-        //LOGGER.debug("SK_pi: " + DataUtils.bytesToHexStr(keysGenerator.getSkPi()));
-        //LOGGER.debug("Init ID Payload: " + DataUtils.bytesToHexStr(initIDPayload));
-        //LOGGER.debug("_psk: " + keysGenerator.get_psk());
         return authData;
     }
 
@@ -495,12 +489,6 @@ public class IKEv2KeysGener {
         } catch (Exception e){
             e.printStackTrace();
         }
-
-        //LOGGER.debug("INIT_SA Packet: " + DataUtils.bytesToHexStr(iInitSaPkt));
-        //LOGGER.debug("Response Nonce: " + DataUtils.bytesToHexStr(rNonce));
-        //LOGGER.debug("SK_pi: " + DataUtils.bytesToHexStr(keysGenerator.getSkPi()));
-        //LOGGER.debug("Init ID Payload: " + DataUtils.bytesToHexStr(initIDPayload));
-        //LOGGER.debug("_psk: " + keysGenerator.get_psk());
         return authData;
     }
 
