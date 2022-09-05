@@ -37,20 +37,27 @@ public class TestMain {
 
         //client.prepare();
 
-
-        test();
+        int i=0;
+        while(true)
+        {
+            System.out.println("------------");
+            test1();
+            System.out.println(i++);
+            System.out.println("------------\n");
+        }
         //calc();
 
         //calcRSADigest();
 
+        //test1();
 
         //client.reset();
 
-        String dateEnd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
-        long et = DataUtils.fromDateStringToLong(dateEnd);
-        float diffTime = (float) (et - st) / 1000;
-        LOGGER.debug("End Time: " + dateEnd);
-        LOGGER.debug("Use Time: " + diffTime + "s");
+//        String dateEnd = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS").format(new Date());
+////        long et = DataUtils.fromDateStringToLong(dateEnd);
+////        float diffTime = (float) (et - st) / 1000;
+////        LOGGER.debug("End Time: " + dateEnd);
+////        LOGGER.debug("Use Time: " + diffTime + "s");
 
         //client.telRemoveSession();
 
@@ -234,19 +241,82 @@ public class TestMain {
 
         //ret = client.rekeyChildSaWithCurIkeSa();
         //System.out.println("ret: " + ret);
+        //client.authWithCertHttp();
+
         client.authWithPsk();
 
         client.rekeyIkeSa();
 
-        client.rekeyChildSaWithOldIkeSa();
+        client.delCurIkeSa();
 
-        client.delCurChildSaWithCurIkeSa();
+        // client.rekeyIkeSa();
 
-        client.delOldChildSaWithCurIkeSa();
+        client.delOldChildSaWithOldIkeSa();
+
+        //client.emptyInfoCurResp();
+
+        //client.rekeyChildSaWithCurIkeSa();
+
+        //client.authWithPsk();
+
+        //ret = client.rekeyIkeSa();
+
+        //ret = client.rekeyIkeSa();
+
+        //ret = client.rekeyIkeSa();
+
+        //ret = client.delOldIkeSa();
+        //System.out.println("ret: " + ret);
+
+        //ret = client.delCurIkeSa();
+        //System.out.println("ret: " + ret);
+
+        client.reset();
+
+        //ret = client.authWithPsk();
+        //System.out.println("ret: " + ret);
+
+    }
+
+    public static void test1() throws IOException {
+        String ret;
+
+        IKEv2Config config = new IKEv2Config("IKEv2/ikev2_config.properties");
+        //LogUtils.LOG_LEVEL = config.getDebug();
+        IKEv2Client client = new IKEv2Client(config);
+
+        client.prepare();
+
+        //ret = client.saInitWithAcceptedSa();
+        //logger.debug("ret: " + ret);
+
+        //ret = client.authWithPsk();
+        //logger.debug("ret: " + ret);
+
+        //client.authWithCert();
+        //client.authWithCertHttp();
+
+        //ret = client.rekeyChildSaWithCurIkeSa();
+        //System.out.println("ret: " + ret);
+        //client.authWithCertHttp();
+
+        client.authWithPsk();
+
+        client.rekeyIkeSa();
+
+        client.rekeyChildSaWithCurIkeSa();
 
         client.delCurIkeSa();
 
-        client.delOldIkeSa();
+        // client.rekeyChildSaWithCurIkeSa();
+
+        client.delOldChildSaWithOldIkeSa();
+
+        // client.rekeyChildSaWithCurIkeSa();
+
+        // client.rekeyIkeSa();
+
+        // client.delOldChildSaWithOldIkeSa();
 
         //client.emptyInfoCurResp();
 

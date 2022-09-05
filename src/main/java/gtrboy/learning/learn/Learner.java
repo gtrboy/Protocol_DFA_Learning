@@ -71,7 +71,7 @@ public class Learner {
                 resetProbability, // reset SUL w/ this probability before a step
                 numSteps, // max steps (overall)
                 true, // reset step count after counterexample
-                new Random(SEED) // make results reproducible
+                new Random(SEED) // cmake results reproducible
         );
 //        EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracle = new ExtendedEqOracle<>(driver, resetProbability, numSteps, null, null);
 

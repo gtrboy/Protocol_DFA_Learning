@@ -23,6 +23,7 @@ public class IKEv2InfoParser extends IKEv2Parser{
         boolean isNotify = false;
 
         while(nPld!=0){
+            LOGGER.debug("Next Payload: " + nPld);
             switch (nPld){
                 case 0x2e:
                     try{

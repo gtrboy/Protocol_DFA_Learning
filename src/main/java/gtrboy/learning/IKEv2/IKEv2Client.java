@@ -8,6 +8,7 @@ import gtrboy.learning.utils.DataUtils;
 import java.io.IOException;
 import java.net.*;
 
+import gtrboy.learning.utils.SshMain;
 import gtrboy.learning.utils.TelnetMain;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,7 +57,8 @@ public class IKEv2Client extends IKEv2{
     //private DatagramSocket _sock_;
     private IKEv2KeysGener g_curKeyGen;
     private IKEv2KeysGener g_oldKeyGen;
-    private final TelnetMain g_telnetClient;
+    private TelnetMain g_telnetClient = null;
+    private SshMain g_sshClient = null;
 
     private static final String TIMEOUT = "TIMEOUT";
     private static final String ERROR = "ERROR";
@@ -83,8 +85,14 @@ public class IKEv2Client extends IKEv2{
 
         telnetUserName = config.getTelUser();
         telnetPassword = config.getTelPass();
-        g_telnetClient = new TelnetMain(g_peerAddr, telnetUserName, telnetPassword, g_sulName);
-        g_telnetClient.connect();
+        if (g_sulName.equals("sonicwall")){
+            g_sshClient = new SshMain(g_peerAddr, telnetUserName, telnetPassword, g_sulName);
+            g_sshClient.openSession();
+        }else{
+            g_telnetClient = new TelnetMain(g_peerAddr, telnetUserName, telnetPassword, g_sulName);
+            g_telnetClient.connect();
+        }
+
 
         String authType = config.getAuthType();
         switch (authType){
@@ -181,6 +189,9 @@ public class IKEv2Client extends IKEv2{
                 break;
             case "hillstone":
                 g_telnetClient.resetHS();
+                break;
+            case "sonicwall":
+                g_sshClient.resetSW();
                 break;
             default:
                 LOGGER.error("Invalid SUL Name! ");

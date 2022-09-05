@@ -96,9 +96,9 @@
                             <sel_len size="2">0010</sel_len>
                             <sta_port size="2">0000</sta_port>
                             <end_port size="2">ffff</end_port>
-                            <!-- TSi: 10.1.1.0 ~ 10.1.1.255 -->
-                            <sta_addr size="4">0a010100</sta_addr>
-                            <end_addr size="4">0a0101ff</end_addr>
+                            <!-- TSr: 172.16.0.0 ~ 172.16.0.255 -->
+                            <sta_addr size="4">ac100000</sta_addr>
+                            <end_addr size="4">ac1000ff</end_addr>
                         </ts>
                     </data>
                 </payload_tsi>
@@ -118,9 +118,9 @@
                             <sel_len size="2">0010</sel_len>
                             <sta_port size="2">0000</sta_port>
                             <end_port size="2">ffff</end_port>
-                            <!-- TSr: 172.16.0.0 ~ 172.16.0.255 -->
-                            <sta_addr size="4">ac100000</sta_addr>
-                            <end_addr size="4">ac1000ff</end_addr>
+                            <!-- TSi: 10.1.1.0 ~ 10.1.1.255 -->
+                            <sta_addr size="4">0a010100</sta_addr>
+                            <end_addr size="4">0a0101ff</end_addr>
                         </ts>
                     </data>
                 </payload_tsr>

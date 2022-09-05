@@ -171,8 +171,8 @@ public class IKEv2LearningMapper implements SULMapper<String, String, ConcreteMe
         SULMapper.super.post();
         try {
             client.reset();
-            //Thread.sleep(200);
-        } catch (IOException  e) {
+            Thread.sleep(100);
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         LOGGER.info("-----------------------------------------\n\n");
